@@ -106,7 +106,7 @@ export default function WelcomeScreen() {
           <Text variant="caption" color="brand" onPress={() => openExternal(env.links.privacy, "Privacy policy")}>
             privacy policy
           </Text>
-          . Information only, not investment advice.
+          , including recording how you use the app (screens, searches, tool results) to improve it. Information only, not investment advice.
         </Text>
       </Animated.View>
     </Screen>

@@ -1,6 +1,11 @@
 import type { ChipTone } from "@/components/ui/Chip";
 import type { InsightVerdict, IpoInsight } from "@/features/insights/types";
 
+/** Shown wherever the house view (verdict) appears. One wording everywhere; change it here only. */
+export const HOUSE_VIEW_DISCLAIMER = "Editorial opinion from an SME IPO advisory firm, not SEBI-registered investment advice. Do your own research.";
+/** Shorter form for small cards where the full line does not fit. */
+export const HOUSE_VIEW_DISCLAIMER_SHORT = "Our opinion, not investment advice.";
+
 /** Editorial house view → label, tone and icon. Wording deliberately avoids buy/sell language. */
 export function verdictMeta(v: InsightVerdict | null | undefined): { label: string; tone: ChipTone; icon: "trending-up-outline" | "remove-outline" | "alert-circle-outline" } {
   switch (v) {

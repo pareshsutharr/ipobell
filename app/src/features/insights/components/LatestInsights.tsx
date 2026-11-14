@@ -9,7 +9,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 
 import { Chip, PressableScale, Text } from "@/components/ui";
 import { imageUri, useInsightMarkers } from "@/features/insights/hooks";
-import { verdictMeta } from "@/features/insights/verdict";
+import { HOUSE_VIEW_DISCLAIMER_SHORT, verdictMeta } from "@/features/insights/verdict";
 import { fetchIposByIds } from "@/features/ipos/api";
 import { boardLabel, CompanyLogo } from "@/features/ipos/components/IpoBits";
 import { track } from "@/lib/analytics";
@@ -91,6 +91,11 @@ export function LatestInsights() {
           );
         })}
       </ScrollView>
+      {latest.some((m) => m.verdict) ? (
+        <Text variant="caption" color="textFaint" style={{ paddingHorizontal: spacing.lg, marginTop: 8 }}>
+          {HOUSE_VIEW_DISCLAIMER_SHORT}
+        </Text>
+      ) : null}
     </View>
   );
 }

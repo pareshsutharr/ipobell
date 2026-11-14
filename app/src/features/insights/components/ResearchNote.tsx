@@ -7,7 +7,7 @@ import { StyleSheet, View } from "react-native";
 import { Chip, PressableScale, Section, Text } from "@/components/ui";
 import type { IpoInsight } from "@/features/insights/types";
 import { imageUri } from "@/features/insights/hooks";
-import { insightVitals, verdictMeta } from "@/features/insights/verdict";
+import { HOUSE_VIEW_DISCLAIMER, insightVitals, verdictMeta } from "@/features/insights/verdict";
 import { usePerspective } from "@/features/perspective/store";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
@@ -40,6 +40,11 @@ export function ResearchNote({ insight }: { insight: IpoInsight }) {
               </Text>
             ) : null}
           </View>
+          {insight.verdict ? (
+            <Text variant="caption" color="textFaint">
+              {HOUSE_VIEW_DISCLAIMER}
+            </Text>
+          ) : null}
           <View style={styles.link}>
             <Text variant="label" color="brand">
               Read the full story in Business view

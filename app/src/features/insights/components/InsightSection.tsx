@@ -10,7 +10,7 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "re
 import { Button, Chip, KeyValueRow, PressableScale, Text, useToneColors } from "@/components/ui";
 import type { IpoInsight } from "@/features/insights/types";
 import { imageUri } from "@/features/insights/hooks";
-import { insightVitals, paragraphs, verdictMeta } from "@/features/insights/verdict";
+import { HOUSE_VIEW_DISCLAIMER, insightVitals, paragraphs, verdictMeta } from "@/features/insights/verdict";
 import type { Ipo } from "@/features/ipos/types";
 import { openExternal, track } from "@/lib/analytics";
 import { dateLong } from "@/lib/format";
@@ -138,7 +138,7 @@ export function InsightSection({ insight, ipo }: { insight: IpoInsight; ipo: Ipo
               </Text>
             ) : null}
             <Text variant="caption" color="textFaint" style={{ marginTop: 8 }}>
-              Editorial opinion from an SME IPO advisory firm, not SEBI-registered investment advice. Do your own research.
+              {HOUSE_VIEW_DISCLAIMER}
             </Text>
           </View>
         ) : null}

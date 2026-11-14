@@ -7,7 +7,7 @@ import { Alert, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { Button, Card, EmptyState, ErrorState, IconButton, ListSkeleton, PressableScale, Screen, Text } from "@/components/ui";
 import { InvalidPanError, PanLimitError, type UserPan } from "@/features/applications/api";
 import { FREE_PAN_LIMIT, useAddPan, useDeletePan, usePans, useRenamePan } from "@/features/applications/hooks";
-import { isValidPan, maskPan, normalizePan, panInputHint } from "@/features/applications/pan";
+import { isValidPan, maskPan, normalizePan, PAN_CONSENT_TEXT, panInputHint } from "@/features/applications/pan";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { dateShort } from "@/lib/format";
 import { useTheme } from "@/lib/theme/ThemeProvider";
@@ -91,6 +91,9 @@ export default function SavedPansScreen() {
                     {panInputHint(pan)}
                   </Text>
                 ) : null}
+                <Text variant="caption" color="textMuted" style={{ lineHeight: 17 }}>
+                  {PAN_CONSENT_TEXT}
+                </Text>
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <Button title="Save" size="sm" variant="dark" loading={addPan.isPending} disabled={!isValidPan(pan) || atLimit} onPress={() => void onAdd()} />
                   <Button title="Cancel" size="sm" variant="secondary" onPress={() => setAdding(false)} />

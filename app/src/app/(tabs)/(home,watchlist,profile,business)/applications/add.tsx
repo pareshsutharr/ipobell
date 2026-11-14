@@ -8,7 +8,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInpu
 import { Button, Divider, EmptyState, ErrorState, IconButton, ListSkeleton, PressableScale, Screen, Text } from "@/components/ui";
 import { InvalidPanError, isAutoCheckable, PanLimitError } from "@/features/applications/api";
 import { FREE_PAN_LIMIT, useAddApplication, useAddPan, usePans } from "@/features/applications/hooks";
-import { isValidPan, maskPan, normalizePan, panInputHint } from "@/features/applications/pan";
+import { isValidPan, maskPan, normalizePan, PAN_CONSENT_TEXT, panInputHint } from "@/features/applications/pan";
 import { fetchIpos } from "@/features/ipos/api";
 import { boardLabel, CompanyLogo } from "@/features/ipos/components/IpoBits";
 import type { IpoListItem } from "@/features/ipos/types";
@@ -239,6 +239,9 @@ export default function AddApplicationScreen() {
                     {panInputHint(newPan)}
                   </Text>
                 ) : null}
+                <Text variant="caption" color="textMuted" style={{ lineHeight: 17 }}>
+                  {PAN_CONSENT_TEXT}
+                </Text>
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <Button title="Save PAN" size="sm" variant="dark" loading={addPan.isPending} disabled={!isValidPan(newPan)} onPress={() => void onAddPan()} />
                   <Button title="Cancel" size="sm" variant="secondary" onPress={() => setShowNewPan(false)} />

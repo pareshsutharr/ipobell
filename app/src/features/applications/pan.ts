@@ -31,3 +31,7 @@ export function panInputHint(input: string): string | null {
   void got;
   return `${10 - i} more (${expected}s next)`;
 }
+
+/** Shown above the Save button wherever a PAN is entered. Saving is the user's consent to exactly this. */
+export const PAN_CONSENT_TEXT =
+  "By saving, you agree that we store this PAN encrypted on our servers and send it to the IPO's registrar only to check allotment status for IPOs you add. Remove it any time and it is deleted.";
