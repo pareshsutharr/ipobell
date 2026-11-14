@@ -8,7 +8,8 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Button, Card, KeyValueRow, Screen, Text } from "@/components/ui";
 import { Field, NumberField, OptionList } from "@/features/business/components/Fields";
 import { LeadForm } from "@/features/business/components/LeadForm";
-import { calcIssueSize, SECTOR_PE } from "@/features/business/tools";
+import { calcIssueSize, growthHint } from "@/features/business/tools";
+import { useBusinessRules } from "@/features/business/useBusinessRules";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { crore } from "@/lib/format";
 import { trackTool } from "@/lib/analytics";
@@ -23,7 +24,11 @@ export default function IssueSizeScreen() {
   const [cagr, setCagr] = useState<number | null>(null);
   const [showSectors, setShowSectors] = useState(true);
 
-  const result = useMemo(() => (pat !== null && sector ? calcIssueSize(pat, sector, cagr) : null), [pat, sector, cagr]);
+  const rules = useBusinessRules();
+  const SECTOR_PE = rules.issueSize.sectorPe;
+  const result = useMemo(() => (pat !== null && sector ? calcIssueSize(pat, sector, cagr, rules.issueSize) : null), [pat, sector, cagr, rules.issueSize]);
+  const float = `${rules.issueSize.dilutionLowPct}–${rules.issueSize.dilutionHighPct}%`;
+  const band = `±${rules.issueSize.bandPct}%`;
   useEffect(() => {
     trackTool("issue_size", "start");
   }, []);
@@ -51,7 +56,7 @@ export default function IssueSizeScreen() {
           )}
         </Field>
 
-        <Field label="3-year revenue CAGR (optional)" hint="Adds a growth premium: 10%+ → +5% · 20%+ → +15% · 30%+ → +25% on the multiple.">
+        <Field label="3-year revenue CAGR (optional)" hint={growthHint(rules.issueSize.growthTiers)}>
           <NumberField value={cagrText} onChange={(t, n) => { setCagrText(t); setCagr(n); }} placeholder="e.g. 22" prefix="" suffix="%" allowNegative />
         </Field>
 
@@ -73,8 +78,8 @@ export default function IssueSizeScreen() {
               <KeyValueRow label="Growth premium" value={result.premiumPct ? `+${result.premiumPct}%` : "none"} valueColor={result.premiumPct ? colors.gain : undefined} />
               <KeyValueRow label="Adjusted P/E" value={`${result.pe}×`} />
               <KeyValueRow label="PAT × P/E (market cap)" value={crore(result.marketCap)} />
-              <KeyValueRow label="Valuation band" value="±10%" />
-              <KeyValueRow label="Public float assumed" value="20–30%" last />
+              <KeyValueRow label="Valuation band" value={band} />
+              <KeyValueRow label="Public float assumed" value={float} last />
             </Card>
             <View style={{ flexDirection: "row", gap: 10 }}>
               <Button title="Estimate the cost of this issue" icon="receipt-outline" variant="dark" onPress={() => router.push({ pathname: "/business/issue-cost", params: { size: String(Math.round(((result.issueLow + result.issueHigh) / 2) * 10) / 10) } })} />
@@ -99,7 +104,7 @@ export default function IssueSizeScreen() {
 
         <Card variant="plain" padding={0} style={{ gap: 6 }}>
           <Text variant="caption" color="textFaint">
-            How it works: market cap ≈ PAT × sector P/E, lifted by a growth premium. Issue size assumes promoters dilute 20–30%, with a ±10% band on valuation. Actual pricing depends on three-year profit consistency, earnings quality, listed-peer valuations, market sentiment and anchor demand. Directional estimate only, not a valuation.
+            How it works: market cap ≈ PAT × sector P/E, lifted by a growth premium. Issue size assumes promoters dilute {float}, with a {band} band on valuation. Actual pricing depends on three-year profit consistency, earnings quality, listed-peer valuations, market sentiment and anchor demand. Directional estimate only, not a valuation.
           </Text>
         </Card>
       </ScrollView>

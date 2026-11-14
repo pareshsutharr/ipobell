@@ -7,6 +7,7 @@ import { Button, Card, Chip, PressableScale, Screen, Text, type ChipTone } from 
 import { CheckRow, Field, NumberField, PillChoice, YES_NO } from "@/features/business/components/Fields";
 import { LeadForm } from "@/features/business/components/LeadForm";
 import { checkEligibility, eligibilityPayload, EMPTY_ELIGIBILITY, type Count03, type EligibilityInput, type EligibilityVerdict, type PlatformResult, type TrackRecord } from "@/features/business/tools";
+import { useBusinessRules } from "@/features/business/useBusinessRules";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { trackTool } from "@/lib/analytics";
 import { useTheme } from "@/lib/theme/ThemeProvider";
@@ -39,7 +40,8 @@ export default function EligibilityScreen() {
   const [text, setText] = useState<Record<NumKey, string>>({ netWorthLatest: "", netWorthPrevious: "", netTangibleAssets: "", leverage: "", postIssueCapital: "", issueSize: "", ofsPortion: "", gcpAmount: "" });
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const result = useMemo(() => checkEligibility(input), [input]);
+  const rules = useBusinessRules();
+  const result = useMemo(() => checkEligibility(input, rules.eligibility), [input, rules.eligibility]);
   const lastTracked = useRef<string | null>(null);
   useEffect(() => {
     trackTool("eligibility", "start");

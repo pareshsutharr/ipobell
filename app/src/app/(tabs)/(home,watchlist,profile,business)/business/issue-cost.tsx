@@ -9,6 +9,7 @@ import { Card, Screen, Text } from "@/components/ui";
 import { Field, NumberField, ScoreBar } from "@/features/business/components/Fields";
 import { LeadForm } from "@/features/business/components/LeadForm";
 import { calcIssueCost, formatCrLakh } from "@/features/business/tools";
+import { useBusinessRules } from "@/features/business/useBusinessRules";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { trackTool } from "@/lib/analytics";
 import { useTheme } from "@/lib/theme/ThemeProvider";
@@ -19,7 +20,8 @@ export default function IssueCostScreen() {
   const initial = params.size && Number(params.size) > 0 ? params.size : "";
   const [sizeText, setSizeText] = useState(initial);
   const [size, setSize] = useState<number | null>(initial ? Number(initial) : null);
-  const result = useMemo(() => (size !== null ? calcIssueCost(size) : null), [size]);
+  const rules = useBusinessRules();
+  const result = useMemo(() => (size !== null ? calcIssueCost(size, rules.issueCost) : null), [size, rules.issueCost]);
   useEffect(() => {
     trackTool("issue_cost", "start");
   }, []);

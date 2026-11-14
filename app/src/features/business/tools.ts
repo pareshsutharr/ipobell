@@ -251,8 +251,32 @@ export interface EligibilityResult {
   blockers: Check[];
 }
 
-const SME_CAPITAL_MAX = 25; // ₹ Cr post-issue paid-up
-const SME_CAPITAL_MIN = 1;
+/** The numbers in the eligibility rules. They change with SEBI / exchange circulars, so they can be updated remotely (see rules.ts). */
+export interface EligibilityLimits {
+  smeCapitalMinCr: number; // post-issue paid-up capital, SME platforms
+  smeCapitalMaxCr: number;
+  ofsMaxPct: number; // offer for sale, share of the issue
+  gcpMaxPct: number; // general corporate purposes, share of the issue
+  gcpMaxCr: number;
+  netWorthMinCr: number;
+  ntaMinCr: number; // net tangible assets
+  leverageMax: number; // debt / equity
+  opProfitMinCr: number; // EBITDA per year
+  opProfitMinYears: number; // of the last 3
+}
+
+export const DEFAULT_ELIGIBILITY_LIMITS: EligibilityLimits = {
+  smeCapitalMinCr: 1,
+  smeCapitalMaxCr: 25,
+  ofsMaxPct: 20,
+  gcpMaxPct: 15,
+  gcpMaxCr: 10,
+  netWorthMinCr: 1,
+  ntaMinCr: 3,
+  leverageMax: 3,
+  opProfitMinCr: 1,
+  opProfitMinYears: 2,
+};
 
 function verdictOf(checks: Check[]): EligibilityVerdict {
   const answered = checks.filter((c) => c.ok !== null);
@@ -270,7 +294,7 @@ export function countAnswered(i: EligibilityInput): { answered: number; total: n
   return { answered: vals.filter((v) => v !== null).length, total: vals.length };
 }
 
-export function checkEligibility(i: EligibilityInput): EligibilityResult {
+export function checkEligibility(i: EligibilityInput, L: EligibilityLimits = DEFAULT_ELIGIBILITY_LIMITS): EligibilityResult {
   const nwL = num(i.netWorthLatest);
   const nwP = num(i.netWorthPrevious);
   const nta = num(i.netTangibleAssets);
@@ -302,34 +326,34 @@ export function checkEligibility(i: EligibilityInput): EligibilityResult {
   };
 
   const opProfit2of3: Check = {
-    label: "Operating profit (EBITDA) ≥ ₹1 Cr in at least 2 of the last 3 years",
-    ok: i.operatingProfitYears === null ? null : i.operatingProfitYears >= 2,
+    label: `Operating profit (EBITDA) ≥ ₹${L.opProfitMinCr} Cr in at least ${L.opProfitMinYears} of the last 3 years`,
+    ok: i.operatingProfitYears === null ? null : i.operatingProfitYears >= L.opProfitMinYears,
     severity: "gap",
     detail: "SEBI ICDR requirement for SME issuers since 2025.",
   };
 
   const smeCapital: Check = {
-    label: `Post-issue paid-up capital between ₹${SME_CAPITAL_MIN} Cr and ₹${SME_CAPITAL_MAX} Cr`,
-    ok: cap === null ? null : cap >= SME_CAPITAL_MIN && cap <= SME_CAPITAL_MAX,
+    label: `Post-issue paid-up capital between ₹${L.smeCapitalMinCr} Cr and ₹${L.smeCapitalMaxCr} Cr`,
+    ok: cap === null ? null : cap >= L.smeCapitalMinCr && cap <= L.smeCapitalMaxCr,
     severity: "gap",
-    detail: cap !== null && cap > SME_CAPITAL_MAX ? "Above ₹25 Cr the company must list on the Main Board." : undefined,
+    detail: cap !== null && cap > L.smeCapitalMaxCr ? `Above ₹${L.smeCapitalMaxCr} Cr the company must list on the Main Board.` : undefined,
   };
 
   const ofsCheck: Check = {
-    label: "Offer for sale ≤ 20% of the total issue",
-    ok: size === null || ofs === null ? null : size <= 0 || ofs <= size * 0.2 + 1e-9,
+    label: `Offer for sale ≤ ${L.ofsMaxPct}% of the total issue`,
+    ok: size === null || ofs === null ? null : size <= 0 || ofs <= (size * L.ofsMaxPct) / 100 + 1e-9,
     severity: "gap",
   };
 
   const gcpCheck: Check = {
-    label: "General corporate purposes ≤ 15% of the issue or ₹10 Cr, whichever is lower",
-    ok: size === null || gcp === null ? null : gcp <= Math.min(size * 0.15, 10) + 1e-9,
+    label: `General corporate purposes ≤ ${L.gcpMaxPct}% of the issue or ₹${L.gcpMaxCr} Cr, whichever is lower`,
+    ok: size === null || gcp === null ? null : gcp <= Math.min((size * L.gcpMaxPct) / 100, L.gcpMaxCr) + 1e-9,
     severity: "gap",
   };
 
   const nw2y: Check = {
-    label: "Net worth ≥ ₹1 Cr in each of the last 2 financial years",
-    ok: nwL === null || nwP === null ? null : nwL >= 1 && nwP >= 1,
+    label: `Net worth ≥ ₹${L.netWorthMinCr} Cr in each of the last 2 financial years`,
+    ok: nwL === null || nwP === null ? null : nwL >= L.netWorthMinCr && nwP >= L.netWorthMinCr,
     severity: "gap",
   };
 
@@ -349,12 +373,12 @@ export function checkEligibility(i: EligibilityInput): EligibilityResult {
   const bse: Check[] = [
     track,
     nw2y,
-    { label: "Net tangible assets ≥ ₹3 Cr (latest full FY)", ok: nta === null ? null : nta >= 3, severity: "gap" },
+    { label: `Net tangible assets ≥ ₹${L.ntaMinCr} Cr (latest full FY)`, ok: nta === null ? null : nta >= L.ntaMinCr, severity: "gap" },
     opProfit2of3,
     { label: "Operating profit in the most recent full financial year", ok: bool(i.operatingProfitLatest, true), severity: "gap" },
     {
-      label: "Leverage (debt ÷ equity) ≤ 3:1",
-      ok: lev === null ? null : lev <= 3 || i.financeCompany === true,
+      label: `Leverage (debt ÷ equity) ≤ ${L.leverageMax}:1`,
+      ok: lev === null ? null : lev <= L.leverageMax || i.financeCompany === true,
       severity: "gap",
       detail: i.financeCompany ? "Finance companies may get a relaxation." : undefined,
     },
@@ -368,9 +392,9 @@ export function checkEligibility(i: EligibilityInput): EligibilityResult {
   // Main Board (indicative — SEBI ICDR Reg. 6(1) profitability route)
   const main: Check[] = [
     track,
-    { label: "Post-issue paid-up capital above ₹25 Cr (SME platform limit)", ok: cap === null ? null : cap > SME_CAPITAL_MAX, severity: "gap", detail: "Below ₹25 Cr the SME platforms are the natural route." },
-    { label: "Net tangible assets ≥ ₹3 Cr in each of the last 3 years", ok: nta === null ? null : nta >= 3, severity: "gap", detail: "Checked on the latest year here; the DRHP must show all three." },
-    { label: "Net worth ≥ ₹1 Cr in each of the last 3 years", ok: nwL === null || nwP === null ? null : nwL >= 1 && nwP >= 1, severity: "gap" },
+    { label: `Post-issue paid-up capital above ₹${L.smeCapitalMaxCr} Cr (SME platform limit)`, ok: cap === null ? null : cap > L.smeCapitalMaxCr, severity: "gap", detail: `Below ₹${L.smeCapitalMaxCr} Cr the SME platforms are the natural route.` },
+    { label: `Net tangible assets ≥ ₹${L.ntaMinCr} Cr in each of the last 3 years`, ok: nta === null ? null : nta >= L.ntaMinCr, severity: "gap", detail: "Checked on the latest year here; the DRHP must show all three." },
+    { label: `Net worth ≥ ₹${L.netWorthMinCr} Cr in each of the last 3 years`, ok: nwL === null || nwP === null ? null : nwL >= L.netWorthMinCr && nwP >= L.netWorthMinCr, severity: "gap" },
     { label: "Average pre-tax operating profit ≥ ₹15 Cr in 3 of the last 5 years", ok: null, severity: "note", detail: "Not asked here — the Main Board profitability test needs five years of restated numbers. Our team checks this with you." },
     ...compliance,
   ];
@@ -384,7 +408,7 @@ export function checkEligibility(i: EligibilityInput): EligibilityResult {
   const blockers = compliance.filter((c) => c.ok === false && c.severity === "block");
   let recommended: PlatformKey | null = null;
   if (!blockers.length) {
-    if (cap !== null && cap > SME_CAPITAL_MAX) recommended = "mainboard";
+    if (cap !== null && cap > L.smeCapitalMaxCr) recommended = "mainboard";
     else {
       const smes = platforms.filter((p) => p.key !== "mainboard");
       const eligible = smes.filter((p) => p.verdict === "eligible");
@@ -464,18 +488,46 @@ export interface IssueSizeResult {
   dilutionHigh: number;
 }
 
-export function growthPremium(cagrPct: number | null): number {
-  if (cagrPct === null || Number.isNaN(cagrPct)) return 0;
-  if (cagrPct >= 30) return 25;
-  if (cagrPct >= 20) return 15;
-  if (cagrPct >= 10) return 5;
-  return 0;
+/** Growth premium tiers: revenue CAGR at or above `minCagrPct` adds `premiumPct` to the sector multiple. */
+export interface GrowthTier {
+  minCagrPct: number;
+  premiumPct: number;
+}
+export const GROWTH_TIERS: GrowthTier[] = [
+  { minCagrPct: 30, premiumPct: 25 },
+  { minCagrPct: 20, premiumPct: 15 },
+  { minCagrPct: 10, premiumPct: 5 },
+];
+
+export interface IssueSizeRules {
+  sectorPe: { sector: string; pe: number }[];
+  growthTiers: GrowthTier[];
+  dilutionLowPct: number;
+  dilutionHighPct: number;
+  /** Valuation band either side of the estimate, in percent. */
+  bandPct: number;
+}
+export const DEFAULT_ISSUE_SIZE_RULES: IssueSizeRules = { sectorPe: SECTOR_PE, growthTiers: GROWTH_TIERS, dilutionLowPct: 20, dilutionHighPct: 30, bandPct: 10 };
+
+/** "Adds a growth premium: 10%+ → +5% · 20%+ → +15% · 30%+ → +25% on the multiple." */
+export function growthHint(tiers: GrowthTier[] = GROWTH_TIERS): string {
+  const parts = [...tiers].sort((x, y) => x.minCagrPct - y.minCagrPct).map((t) => `${t.minCagrPct}%+ → +${t.premiumPct}%`);
+  return `Adds a growth premium: ${parts.join(" · ")} on the multiple.`;
 }
 
-export function calcIssueSize(patCr: number, sector: string, cagrPct: number | null): IssueSizeResult | null {
-  const basePe = SECTOR_PE.find((s) => s.sector === sector)?.pe;
+export function growthPremium(cagrPct: number | null, tiers: GrowthTier[] = GROWTH_TIERS): number {
+  if (cagrPct === null || Number.isNaN(cagrPct)) return 0;
+  // the highest tier the CAGR reaches, whatever order the tiers are stored in
+  const reached = tiers.filter((t) => cagrPct >= t.minCagrPct).sort((a, b) => b.minCagrPct - a.minCagrPct)[0];
+  return reached ? reached.premiumPct : 0;
+}
+
+export function calcIssueSize(patCr: number, sector: string, cagrPct: number | null, rules: IssueSizeRules = DEFAULT_ISSUE_SIZE_RULES): IssueSizeResult | null {
+  const basePe = rules.sectorPe.find((s) => s.sector === sector)?.pe;
   if (!basePe || !(patCr > 0)) return null;
-  const premiumPct = growthPremium(cagrPct);
+  const premiumPct = growthPremium(cagrPct, rules.growthTiers);
+  const lowBand = 1 - rules.bandPct / 100;
+  const highBand = 1 + rules.bandPct / 100;
   const pe = Math.round(basePe * (1 + premiumPct / 100) * 10) / 10;
   const marketCap = patCr * basePe * (1 + premiumPct / 100);
   const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -484,12 +536,12 @@ export function calcIssueSize(patCr: number, sector: string, cagrPct: number | n
     premiumPct,
     pe,
     marketCap: r1(marketCap),
-    marketCapLow: r1(marketCap * 0.9),
-    marketCapHigh: r1(marketCap * 1.1),
-    issueLow: r1(marketCap * 0.9 * 0.2),
-    issueHigh: r1(marketCap * 1.1 * 0.3),
-    dilutionLow: 20,
-    dilutionHigh: 30,
+    marketCapLow: r1(marketCap * lowBand),
+    marketCapHigh: r1(marketCap * highBand),
+    issueLow: r1((marketCap * lowBand * rules.dilutionLowPct) / 100),
+    issueHigh: r1((marketCap * highBand * rules.dilutionHighPct) / 100),
+    dilutionLow: rules.dilutionLowPct,
+    dilutionHigh: rules.dilutionHighPct,
   };
 }
 
@@ -514,7 +566,13 @@ export const COST_STAGES: { label: string; lakhs: number }[] = [
   { label: "On IPO Opening", lakhs: 8 },
   { label: "On IPO Completion", lakhs: 319 },
 ];
-const COST_TOTAL_LAKHS = COST_ITEMS.reduce((n, i) => n + i.lakhs, 0); // 350
+export interface IssueCostRules {
+  /** The reference deal the line items are priced for, in ₹ lakh (3500 = ₹35 Cr). */
+  referenceIssueLakhs: number;
+  items: { label: string; lakhs: number; hint?: string }[];
+  stages: { label: string; lakhs: number }[];
+}
+export const DEFAULT_ISSUE_COST_RULES: IssueCostRules = { referenceIssueLakhs: COST_REFERENCE_ISSUE_LAKHS, items: COST_ITEMS, stages: COST_STAGES };
 
 export interface CostLine {
   label: string;
@@ -530,17 +588,20 @@ export interface CostResult {
   stages: (CostLine & { cumulativePct: number })[]; // pct here = share of total cost
 }
 
-export function calcIssueCost(issueSizeCr: number): CostResult | null {
+export function calcIssueCost(issueSizeCr: number, rules: IssueCostRules = DEFAULT_ISSUE_COST_RULES): CostResult | null {
   if (!(issueSizeCr > 0)) return null;
-  const scale = (issueSizeCr * 100) / COST_REFERENCE_ISSUE_LAKHS; // lakhs per reference-lakh
-  const items = COST_ITEMS.map((i) => ({ label: i.label, hint: i.hint, amountCr: (i.lakhs * scale) / 100, pct: (i.lakhs / COST_REFERENCE_ISSUE_LAKHS) * 100 }));
-  const totalCr = (COST_TOTAL_LAKHS * scale) / 100;
+  const reference = rules.referenceIssueLakhs;
+  const totalLakhs = rules.items.reduce((n, i) => n + i.lakhs, 0);
+  if (!(reference > 0) || !(totalLakhs > 0)) return null;
+  const scale = (issueSizeCr * 100) / reference; // lakhs per reference-lakh
+  const items = rules.items.map((i) => ({ label: i.label, hint: i.hint, amountCr: (i.lakhs * scale) / 100, pct: (i.lakhs / reference) * 100 }));
+  const totalCr = (totalLakhs * scale) / 100;
   let cum = 0;
-  const stages = COST_STAGES.map((s) => {
+  const stages = rules.stages.map((s) => {
     cum += s.lakhs;
-    return { label: s.label, amountCr: (s.lakhs * scale) / 100, pct: (s.lakhs / COST_TOTAL_LAKHS) * 100, cumulativePct: (cum / COST_TOTAL_LAKHS) * 100 };
+    return { label: s.label, amountCr: (s.lakhs * scale) / 100, pct: (s.lakhs / totalLakhs) * 100, cumulativePct: (cum / totalLakhs) * 100 };
   });
-  return { issueSizeCr, totalCr, totalPct: (COST_TOTAL_LAKHS / COST_REFERENCE_ISSUE_LAKHS) * 100, items, stages };
+  return { issueSizeCr, totalCr, totalPct: (totalLakhs / reference) * 100, items, stages };
 }
 
 /** ₹ crore / lakh formatter for planning numbers (0.058 → ₹5.80 L, 2 → ₹2.00 Cr). */
