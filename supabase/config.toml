@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.notify-lead]
 verify_jwt = false
+
+[functions.sync-watchdog]
+verify_jwt = false
