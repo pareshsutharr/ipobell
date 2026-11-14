@@ -3,8 +3,9 @@ import { useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Linking, ScrollView, StyleSheet, Switch, View } from "react-native";
 
-import { Button, Card, Disclaimer, ErrorState, Screen, Section, Skeleton, Text } from "@/components/ui";
+import { Button, Card, Disclaimer, ErrorState, FilterChip, Screen, Section, Skeleton, Text } from "@/components/ui";
 import type { NotificationPreferences } from "@/features/ipos/types";
+import { BOARD_OPTIONS, FILTER_SECTORS, filterSummary, hasFilters, NO_FILTERS, presetOf, readFilters, SIZE_PRESETS, toggleSector, type NotificationFilters } from "@/features/notifications/filters";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { track } from "@/lib/analytics";
 import { useNotificationPreferences, useUpdateNotificationPreferences, useUserId } from "@/lib/auth/hooks";
@@ -12,7 +13,7 @@ import { getPushPermissionStatus, registerDeviceForPush, requestPushPermission }
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
-type PrefKey = keyof Omit<NotificationPreferences, "user_id">;
+type PrefKey = Exclude<keyof Omit<NotificationPreferences, "user_id">, keyof NotificationFilters>;
 
 const GROUPS: { title: string; items: { key: PrefKey; title: string; body: string }[] }[] = [
   {
@@ -99,6 +100,14 @@ export default function NotificationsScreen() {
     update.mutate({ [key]: value });
   };
 
+  const filters = readFilters(prefs);
+  const sizePreset = presetOf(filters);
+  const setFilters = (patch: Partial<NotificationFilters>) => {
+    const next = { ...filters, ...patch };
+    track("notification_pref", { key: "filters", value: filterSummary(next) });
+    update.mutate(patch);
+  };
+
   return (
     <Screen>
       <PageHeader title="Notifications" subtitle="Pick exactly what you want to hear about" />
@@ -165,6 +174,44 @@ export default function NotificationsScreen() {
                 </View>
               </Card>
             </Section>
+            <Section title="Which IPOs" subtitle={filterSummary(filters)}>
+              <Card style={{ gap: 14 }}>
+                <View style={{ gap: 8 }}>
+                  <Text variant="label" color="textMuted">
+                    Board
+                  </Text>
+                  <View style={styles.chips}>
+                    {BOARD_OPTIONS.map((o) => (
+                      <FilterChip key={o.label} label={o.label} selected={filters.filter_board === o.value} onPress={() => setFilters({ filter_board: o.value })} />
+                    ))}
+                  </View>
+                </View>
+                <View style={{ gap: 8 }}>
+                  <Text variant="label" color="textMuted">
+                    Issue size
+                  </Text>
+                  <View style={styles.chips}>
+                    {SIZE_PRESETS.map((p) => (
+                      <FilterChip key={p.key} label={p.label} selected={sizePreset?.key === p.key} onPress={() => setFilters({ filter_min_issue_cr: p.min, filter_max_issue_cr: p.max })} />
+                    ))}
+                  </View>
+                </View>
+                <View style={{ gap: 8 }}>
+                  <Text variant="label" color="textMuted">
+                    Sector {filters.filter_sectors ? `(${filters.filter_sectors.length} chosen)` : "(all)"}
+                  </Text>
+                  <View style={styles.chips}>
+                    {FILTER_SECTORS.map((s) => (
+                      <FilterChip key={s} label={s} selected={Boolean(filters.filter_sectors?.includes(s))} onPress={() => setFilters({ filter_sectors: toggleSector(filters.filter_sectors, s) })} />
+                    ))}
+                  </View>
+                </View>
+                <Text variant="caption" color="textFaint" style={{ lineHeight: 17 }}>
+                  IPOs on your watchlist always reach you. If we have not entered an IPO&apos;s sector yet, or its size is not announced, it is still sent so you do not miss it.
+                </Text>
+                {hasFilters(filters) ? <Button title="Clear filters" size="sm" variant="secondary" onPress={() => setFilters(NO_FILTERS)} /> : null}
+              </Card>
+            </Section>
             {GROUPS.map((g) => (
               <Section key={g.title} title={g.title}>
                 <Card padding={0}>
@@ -194,4 +241,5 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   permRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 });

@@ -266,6 +266,11 @@ export interface NotificationPreferences {
   subscription_milestone: boolean;
   gmp_change: boolean;
   only_watchlist: boolean;
+  /** Filters (null = no limit). Absent on a backend that does not have them yet. */
+  filter_board?: Board | null;
+  filter_sectors?: string[] | null;
+  filter_min_issue_cr?: number | null;
+  filter_max_issue_cr?: number | null;
 }
 
 export interface WatchlistRow {
