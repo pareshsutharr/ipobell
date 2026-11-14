@@ -53,7 +53,7 @@ Tests: `node --test supabase/tests/*.test.ts` (backend mappers, registrars, watc
 | Postgres schema, RLS, indexes, realtime publication | applied |
 | pg_cron: sync every 15 min (08:30–18:29 IST), hourly otherwise, full backfill 06:50 IST, reminders 08:30 / 15:00 / 19:00 IST, weekly housekeeping | scheduled |
 | Edge Functions: sync-ipos, send-notifications, daily-reminders, check-allotments, test-push, delete-account, notify-lead | deployed |
-| Edge Function `sync-watchdog` and migrations `20261114000100`–`20261114000500` (sync alerts, lead forward retry, private raw feed data, error reporting) | written 14 Nov 2026, **not applied yet** |
+| Edge Function `sync-watchdog` and migrations `20261114000100`–`20261114000600` (sync alerts, lead forward retry, private raw feed data, error reporting, team-entered IPO data) | deployed and applied 14 Nov 2026 |
 | Secrets: `IPO_API_KEY` (Be IPO Ready `bpr_…` connector key), `IPO_API_BASE_URL` (`https://beipoready.com/api/ipo-data`), `CRON_SECRET`, `ANDROID_PACKAGE_NAME`, `GMP_ALERT_THRESHOLD_PCT` | set (mirror cutover 30 Oct 2026, sync-ipos v10) |
 | `FCM_SERVICE_ACCOUNT_JSON` | set (27 Oct 2026) |
 | Anonymous auth | enabled |
