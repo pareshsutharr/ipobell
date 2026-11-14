@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 
 import { Disclaimer, EmptyState, ErrorState, FilterChip, IconButton, ListSkeleton, PressableScale, Screen, SegmentedControl, Text } from "@/components/ui";
 import { BusinessPromo } from "@/features/business/components/BusinessPromo";
@@ -11,7 +11,8 @@ import { useInsightMarkers } from "@/features/insights/hooks";
 import { PerspectiveSwitch } from "@/features/perspective/PerspectiveSwitch";
 import { usePerspective } from "@/features/perspective/store";
 import { IpoCard } from "@/features/ipos/components/IpoCard";
-import { useIpos } from "@/features/ipos/hooks";
+import { useIpos, useIposPaged } from "@/features/ipos/hooks";
+import { flattenPages, totalOf } from "@/features/ipos/paging";
 import type { Board, IpoListItem, IpoStatus } from "@/features/ipos/types";
 import { openExternal } from "@/lib/analytics";
 import { env } from "@/lib/env";
@@ -50,21 +51,34 @@ export default function HomeScreen() {
   }
 
   // All four queries run so segment counts are visible; only the active one drives the list.
+  // Open and Upcoming are short. Closed and Listed load a page at a time as the user scrolls.
   const open = useIpos("open", { board });
   const upcoming = useIpos("upcoming", { board });
-  const closed = useIpos("closed", { board });
-  const listed = useIpos("listed", { board });
+  const closed = useIposPaged("closed", { board });
+  const listed = useIposPaged("listed", { board });
+  const closedRows = useMemo(() => flattenPages(closed.data?.pages), [closed.data]);
+  const listedRows = useMemo(() => flattenPages(listed.data?.pages), [listed.data]);
   const byStatus = { open, upcoming, closed, listed } as const;
   const active = byStatus[segment];
+  const paged = segment === "closed" ? closed : segment === "listed" ? listed : null;
+  const activeData: IpoListItem[] | undefined = segment === "open" ? open.data : segment === "upcoming" ? upcoming.data : segment === "closed" ? (closed.data ? closedRows : undefined) : listed.data ? listedRows : undefined;
+  const activeTotal = paged ? totalOf(paged.data?.pages) : activeData?.length;
 
   const rows = useMemo<Row[]>(() => {
-    const data = active.data ?? [];
+    const data = activeData ?? [];
     const out: Row[] = [];
     data.forEach((ipo, index) => {
       out.push({ kind: "ipo", ipo, index });
     });
     return out;
-  }, [active.data]);
+  }, [activeData]);
+
+  const hasNextPage = paged?.hasNextPage ?? false;
+  const isFetchingNextPage = paged?.isFetchingNextPage ?? false;
+  const fetchNextPage = paged?.fetchNextPage;
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage?.();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const onWatchlistLimit = useCallback(() => {
     Alert.alert("Watchlist is full", "You can watch up to 50 IPOs. Remove one to add another.");
@@ -90,7 +104,7 @@ export default function HomeScreen() {
         options={[
           { value: "open", label: "Open", count: open.data?.length },
           { value: "upcoming", label: "Upcoming", count: upcoming.data?.length },
-          { value: "closed", label: "Closed", count: closed.data?.length },
+          { value: "closed", label: "Closed", count: totalOf(closed.data?.pages) },
           { value: "listed", label: "Listed" },
         ]}
       />
@@ -116,6 +130,21 @@ export default function HomeScreen() {
 
   const Footer = (
     <View style={{ paddingVertical: spacing.xl, gap: spacing.md }}>
+      {paged ? (
+        isFetchingNextPage ? (
+          <ActivityIndicator color={colors.primary} accessibilityLabel="Loading more IPOs" />
+        ) : paged.isFetchNextPageError ? (
+          <PressableScale onPress={loadMore} accessibilityRole="button" style={styles.attribution}>
+            <Text variant="caption" color="primary" weight="semibold">
+              Could not load more. Tap to try again.
+            </Text>
+          </PressableScale>
+        ) : !hasNextPage && rows.length > 0 ? (
+          <Text variant="caption" color="textFaint" align="center">
+            All {activeTotal ?? rows.length} shown
+          </Text>
+        ) : null
+      ) : null}
       {business ? null : <BusinessPromo />}
       <Disclaimer compact />
       <PressableScale onPress={() => openExternal(env.links.dataAttribution, "IPO Guru attribution")} style={styles.attribution} accessibilityRole="link">
@@ -131,14 +160,14 @@ export default function HomeScreen() {
   );
 
   let body: React.ReactNode;
-  if (active.isLoading && !active.data) {
+  if (active.isLoading && !activeData) {
     body = (
       <View>
         {Header}
         <ListSkeleton count={5} />
       </View>
     );
-  } else if (active.isError && !active.data) {
+  } else if (active.isError && !activeData) {
     body = (
       <View>
         {Header}
@@ -154,7 +183,9 @@ export default function HomeScreen() {
         ListHeaderComponent={Header}
         ListFooterComponent={Footer}
         ListEmptyComponent={<EmptyState icon="pulse-outline" title={EMPTY_COPY[segment].title} message={EMPTY_COPY[segment].message} />}
-        refreshControl={<RefreshControl refreshing={active.isRefetching} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.surface} />}
+        refreshControl={<RefreshControl refreshing={active.isRefetching && !isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.surface} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.6}
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={7}

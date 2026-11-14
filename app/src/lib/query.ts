@@ -28,6 +28,7 @@ export const PERSIST_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 export const qk = {
   ipos: (status: string, board: string | null, q: string) => ["ipos", status, board ?? "all", q] as const,
+  iposPaged: (status: string, board: string | null) => ["ipos-paged", status, board ?? "all"] as const,
   ipo: (slug: string) => ["ipo", slug] as const,
   subscription: (ipoId: string) => ["ipo-subscription", ipoId] as const,
   gmpHistory: (ipoId: string) => ["ipo-gmp", ipoId] as const,

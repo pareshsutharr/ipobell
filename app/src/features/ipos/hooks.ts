@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import {
@@ -9,6 +9,7 @@ import {
   fetchGmpHistory,
   fetchIpo,
   fetchIpos,
+  fetchIposPage,
   fetchLatestSubscription,
   fetchListed,
   fetchListingStats,
@@ -16,6 +17,7 @@ import {
   searchIpos,
   type ListFilters,
 } from "@/features/ipos/api";
+import { IPO_PAGE_SIZE, nextOffset } from "@/features/ipos/paging";
 import type { Board, IpoStatus } from "@/features/ipos/types";
 import { qk } from "@/lib/query";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +27,17 @@ export function useIpos(status: IpoStatus, filters: ListFilters = {}) {
     queryKey: qk.ipos(status, filters.board ?? null, filters.search ?? ""),
     queryFn: () => fetchIpos(status, filters),
     staleTime: status === "open" ? 30 * 1000 : 5 * 60 * 1000,
+  });
+}
+
+/** A status list loaded a page at a time (Listed and Closed can run to hundreds of rows). */
+export function useIposPaged(status: IpoStatus, filters: ListFilters = {}) {
+  return useInfiniteQuery({
+    queryKey: qk.iposPaged(status, filters.board ?? null),
+    queryFn: ({ pageParam }) => fetchIposPage(status, filters, pageParam, IPO_PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => nextOffset(last, pages),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

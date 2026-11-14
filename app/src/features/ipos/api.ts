@@ -46,6 +46,40 @@ export async function fetchIpos(status: IpoStatus, filters: ListFilters = {}): P
   return (data ?? []) as unknown as IpoListItem[];
 }
 
+export interface IpoPage {
+  rows: IpoListItem[];
+  /** How many IPOs match in total (all pages). */
+  total: number;
+  offset: number;
+}
+
+/**
+ * One page of a status list. Same order as fetchIpos, plus `slug` as a final tie-breaker: without a unique last
+ * sort key, IPOs that share a listing date could repeat or go missing between pages.
+ */
+export async function fetchIposPage(status: IpoStatus, filters: ListFilters, offset: number, pageSize: number): Promise<IpoPage> {
+  let q = supabase.from("ipos").select(LIST_COLUMNS, { count: "exact" }).eq("status", status);
+  if (filters.board) q = q.eq("board", filters.board);
+  switch (status) {
+    case "open":
+      q = q.order("close_date", { ascending: true, nullsFirst: false }).order("board", { ascending: true });
+      break;
+    case "upcoming":
+      q = q.order("open_date", { ascending: true, nullsFirst: false }).order("name");
+      break;
+    case "closed":
+      q = q.order("listing_date", { ascending: true, nullsFirst: false }).order("close_date", { ascending: false });
+      break;
+    case "listed":
+      q = q.order("listing_date", { ascending: false, nullsFirst: false });
+      break;
+  }
+  const { data, error, count } = await q.order("slug", { ascending: true }).range(offset, offset + pageSize - 1);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as IpoListItem[];
+  return { rows, total: count ?? offset + rows.length, offset };
+}
+
 export async function searchIpos(search: string, limit = 30): Promise<IpoListItem[]> {
   const { data, error } = await supabase
     .from("ipos")
