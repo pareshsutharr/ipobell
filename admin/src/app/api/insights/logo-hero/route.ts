@@ -5,6 +5,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import sharp from "sharp";
 
+import { safeFetch, UnsafeUrlError } from "@/lib/safe-fetch";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
@@ -47,7 +48,13 @@ export async function POST(request: NextRequest) {
     if (!ipo) return NextResponse.json({ error: "IPO not found." }, { status: 404 });
     if (!ipo.logo_url) return NextResponse.json({ error: "This IPO has no logo in the feed." }, { status: 422 });
 
-    const res = await fetch(ipo.logo_url, { headers: { "user-agent": "Mozilla/5.0 (compatible; BeIPOReadyAdmin/1.0)", accept: "image/*" }, signal: AbortSignal.timeout(15_000) });
+    // The logo URL comes from the data feed; treat it like any outside link.
+    let res: Response;
+    try {
+      res = (await safeFetch(ipo.logo_url, { headers: { "user-agent": "Mozilla/5.0 (compatible; BeIPOReadyAdmin/1.0)", accept: "image/*" }, signal: AbortSignal.timeout(15_000) })).response;
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof UnsafeUrlError ? `The logo link was refused: ${e.message}` : "Could not download the logo." }, { status: e instanceof UnsafeUrlError ? 400 : 502 });
+    }
     if (!res.ok) return NextResponse.json({ error: `Could not download the logo (HTTP ${res.status}).` }, { status: 502 });
     const logoBuf = Buffer.from(await res.arrayBuffer());
     if (logoBuf.byteLength < 200) return NextResponse.json({ error: "The logo file is empty." }, { status: 422 });

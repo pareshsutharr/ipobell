@@ -3,6 +3,7 @@
 // goes through the caller's own session, so the bucket's RLS still applies.
 import { NextResponse, type NextRequest } from "next/server";
 
+import { safeFetch, UnsafeUrlError } from "@/lib/safe-fetch";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
@@ -20,15 +21,18 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => ({}))) as { ipo_id?: string; url?: string };
     if (!body.ipo_id || !body.url) return NextResponse.json({ error: "ipo_id and url are required." }, { status: 400 });
+    // safeFetch refuses private/local addresses and re-checks every redirect, so this route cannot be used to
+    // reach the server's own network.
+    let res: Response;
     let target: URL;
     try {
-      target = new URL(body.url);
-      if (target.protocol !== "http:" && target.protocol !== "https:") throw new Error();
-    } catch {
-      return NextResponse.json({ error: "That is not a valid image link." }, { status: 400 });
+      const fetched = await safeFetch(body.url, { headers: { "user-agent": "Mozilla/5.0 (compatible; BeIPOReadyAdmin/1.0)", accept: "image/*" }, signal: AbortSignal.timeout(20_000) });
+      res = fetched.response;
+      target = new URL(fetched.finalUrl);
+    } catch (e) {
+      if (e instanceof UnsafeUrlError) return NextResponse.json({ error: e.message }, { status: 400 });
+      return NextResponse.json({ error: "The image server could not be reached." }, { status: 502 });
     }
-
-    const res = await fetch(target, { headers: { "user-agent": "Mozilla/5.0 (compatible; BeIPOReadyAdmin/1.0)", accept: "image/*" }, signal: AbortSignal.timeout(20_000) });
     if (!res.ok) return NextResponse.json({ error: `The image server answered HTTP ${res.status}.` }, { status: 502 });
     const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     const ext = EXT[type];

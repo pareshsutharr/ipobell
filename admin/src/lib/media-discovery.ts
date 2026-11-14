@@ -3,6 +3,8 @@
 // itself quoted. Every candidate is verified with a real request before it is shown to the admin, so nothing
 // hallucinated gets through. Nothing here generates images: promoters are real people.
 
+import { safeFetch } from "./safe-fetch";
+
 export interface MediaImage {
   url: string;
   /** Hostname the image was found on. */
@@ -58,10 +60,11 @@ function absolute(src: string, base: string): string | null {
 
 async function fetchHtml(url: string, ms = 8000): Promise<{ html: string; finalUrl: string } | null> {
   try {
-    const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(ms), redirect: "follow" });
+    // Pages come from the feed, from search results and from AI answers: never fetch a private/local address.
+    const { response: res, finalUrl } = await safeFetch(url, { headers: { "user-agent": UA, accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(ms) });
     if (!res.ok || !/text\/html/i.test(res.headers.get("content-type") ?? "")) return null;
     const html = (await res.text()).slice(0, 1_500_000);
-    return { html, finalUrl: res.url || url };
+    return { html, finalUrl };
   } catch {
     return null;
   }
@@ -124,7 +127,7 @@ function pageVideos(html: string): string[] {
 
 async function verifyImage(url: string): Promise<number | null | false> {
   try {
-    const res = await fetch(url, { headers: { "user-agent": UA, accept: "image/*" }, signal: AbortSignal.timeout(6000) });
+    const { response: res } = await safeFetch(url, { headers: { "user-agent": UA, accept: "image/*" }, signal: AbortSignal.timeout(6000) });
     const type = res.headers.get("content-type") ?? "";
     const len = Number(res.headers.get("content-length") ?? "");
     await res.body?.cancel().catch(() => undefined);
