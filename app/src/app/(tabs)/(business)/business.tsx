@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 
 import { Button, Card, PressableScale, Screen, Text } from "@/components/ui";
 import { ToolCard } from "@/features/business/components/Fields";
+import { InterestCard } from "@/features/business/components/InterestCard";
 import { LeadForm } from "@/features/business/components/LeadForm";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { openExternal } from "@/lib/analytics";
@@ -113,6 +114,9 @@ export default function BusinessScreen() {
             ))}
           </Card>
         </View>
+
+        {/* Fundraising / pre-IPO / IPO interest */}
+        <InterestCard />
 
         {/* Lead form */}
         <LeadForm source="business-hub" title="Book an IPO readiness call" subtitle="A 30-minute, no-obligation conversation about your company, the right exchange and a realistic timeline." cta="Book my call" showMessage />

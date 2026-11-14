@@ -1,8 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
 import { KeyValueRow, Section, Stat, Text } from "@/components/ui";
 import { boardLabel, CompanyLogo, GainText, GmpChip, StatusBadge } from "@/features/ipos/components/IpoBits";
+import { useIpoInterest } from "@/features/ipos/hooks";
+import { interestLine } from "@/features/ipos/interest";
 import { retailMinimum } from "@/features/ipos/lots";
 import type { Ipo } from "@/features/ipos/types";
 import { crore, inr, timeAgo } from "@/lib/format";
@@ -10,7 +13,8 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 
 /** Flat hero: identity line, key numbers as a 2×2 grid, GMP / listing line. */
 export function HeroCard({ ipo }: { ipo: Ipo }) {
-  const { spacing } = useTheme();
+  const { spacing, colors } = useTheme();
+  const interest = interestLine(useIpoInterest(ipo.id).data);
   const listed = ipo.status === "listed" && ipo.listing_price !== null;
   const retailMin = retailMinimum(ipo);
   const identity = [boardLabel(ipo.board, ipo.sub_type), ipo.nse_symbol ?? null, ipo.bse_scrip_code ? `BSE ${ipo.bse_scrip_code}` : null, ipo.listing_on ? `Listing on ${ipo.listing_on}` : null]
@@ -34,6 +38,14 @@ export function HeroCard({ ipo }: { ipo: Ipo }) {
       <View style={{ marginTop: 10 }}>
         <StatusBadge ipo={ipo} size="sm" />
       </View>
+      {interest ? (
+        <View style={styles.interest} accessibilityLabel={`Interest on Be IPO Ready: ${interest}`}>
+          <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+          <Text variant="caption" color="textMuted">
+            {interest} on Be IPO Ready
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.grid}>
         <View style={styles.cell}>
@@ -122,6 +134,7 @@ export function IssueDetailsSection({ ipo }: { ipo: Ipo }) {
 }
 
 const styles = StyleSheet.create({
+  interest: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
   head: { flexDirection: "row", gap: 12, alignItems: "center" },
   grid: { flexDirection: "row", gap: 12, marginTop: 18 },
   cell: { flex: 1 },

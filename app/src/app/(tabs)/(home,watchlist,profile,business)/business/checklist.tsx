@@ -1,36 +1,101 @@
-// SME IPO listing checklist — 6 phases, 32 steps, ticks saved on the device.
+// SME IPO listing checklist — 6 phases, 32 steps. Ticks are saved on the phone and, when there is a session,
+// to the account (public.checklist_progress) so they follow the user to another device.
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { Card, PressableScale, Screen, Text } from "@/components/ui";
+import { decideOnOpen, parseLocal, sameDone, type Done } from "@/features/business/checklistSync";
 import { ScoreBar } from "@/features/business/components/Fields";
 import { LeadForm } from "@/features/business/components/LeadForm";
 import { CHECKLIST, checklistKey, checklistProgress } from "@/features/business/tools";
 import { PageHeader } from "@/features/shell/components/PageHeader";
 import { trackTool } from "@/lib/analytics";
+import { useAuth } from "@/lib/auth/store";
+import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
 const STORAGE_KEY = "ipobell.business.checklist.v1";
+const SAVE_DELAY_MS = 1200;
+
+type SyncState = "local" | "saving" | "saved" | "failed";
 
 export default function ChecklistScreen() {
   const { colors, spacing, radius } = useTheme();
-  const [done, setDone] = useState<Record<string, boolean>>({});
+  const [done, setDone] = useState<Done>({});
   const [hydrated, setHydrated] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [sync, setSync] = useState<SyncState>("local");
+  const userId = useAuth((s) => s.user?.id ?? null);
+  const isGuest = useAuth((s) => Boolean(s.user?.is_anonymous));
+  const doneRef = useRef<Done>({});
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
+  // Open: read the phone's copy, then the account's copy, and decide which one to show (see decideOnOpen).
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => raw && setDone(JSON.parse(raw) as Record<string, boolean>))
-      .catch(() => undefined)
-      .finally(() => setHydrated(true));
-  }, []);
+    let cancelled = false;
+    void (async () => {
+      const local = parseLocal(await AsyncStorage.getItem(STORAGE_KEY).catch(() => null));
+      let remote: unknown | null | undefined = undefined;
+      if (userId) {
+        const { data, error } = await supabase.from("checklist_progress").select("done").eq("user_id", userId).maybeSingle();
+        if (!error) remote = data ? (data as { done: unknown }).done : null;
+      }
+      if (cancelled) return;
+      const decision = decideOnOpen(local, remote);
+      setDone(decision.done);
+      setDirty(decision.push);
+      if (remote !== undefined && !decision.push) setSync("saved");
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Every change is written to the phone at once.
   useEffect(() => {
-    if (hydrated) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(done)).catch(() => undefined);
-  }, [done, hydrated]);
+    if (hydrated) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ done, dirty })).catch(() => undefined);
+  }, [done, dirty, hydrated]);
+
+  // ...and to the account shortly after the last tap. A failed save stays "dirty" and is retried on the next change or open.
+  useEffect(() => {
+    if (!hydrated || !dirty || !userId) return;
+    const t = setTimeout(() => {
+      const snapshot = done;
+      setSync("saving");
+      supabase
+        .from("checklist_progress")
+        .upsert({ user_id: userId, done: snapshot }, { onConflict: "user_id" })
+        .then(({ error }) => {
+          if (error) return setSync("failed");
+          setSync("saved");
+          setDirty((d) => (sameDone(snapshot, doneRef.current) ? false : d));
+        });
+    }, SAVE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [done, dirty, hydrated, userId]);
 
   const progress = useMemo(() => checklistProgress(done), [done]);
-  const toggle = (k: string) => setDone((d) => ({ ...d, [k]: !d[k] }));
+  const toggle = (k: string) => {
+    setDone((d) => {
+      const next = { ...d };
+      if (next[k]) delete next[k];
+      else next[k] = true;
+      return next;
+    });
+    setDirty(true);
+  };
+  const savedNote = !userId
+    ? "Tick items off as you go. Saved on this device."
+    : sync === "failed"
+      ? "Saved on this device. We could not reach your account; it will be retried."
+      : isGuest
+        ? "Tick items off as you go. Saved on this device. Sign in to keep your progress across devices."
+        : "Tick items off as you go. Saved to your account, so it follows you to another device.";
   useEffect(() => {
     trackTool("checklist", "start");
   }, []);
@@ -55,7 +120,7 @@ export default function ChecklistScreen() {
           </View>
           <ScoreBar percent={progress.percent} height={10} />
           <Text variant="caption" color="textMuted">
-            Tick items off as you go. Saved on this device.
+            {savedNote}
           </Text>
         </Card>
 

@@ -9,6 +9,7 @@ import {
   fetchGmpHistory,
   fetchIpo,
   fetchIpos,
+  fetchIpoInterest,
   fetchIpoStates,
   fetchIposByState,
   fetchIposPage,
@@ -68,6 +69,11 @@ export function useIpoStates() {
 export function useIpoState(ipoId: string | undefined): string | undefined {
   const { data } = useIpoStates();
   return ipoId ? data?.[ipoId] : undefined;
+}
+
+/** Interest totals for one IPO. A failure (for example an older backend) simply shows nothing. */
+export function useIpoInterest(ipoId: string | undefined) {
+  return useQuery({ queryKey: qk.ipoInterest(ipoId ?? ""), queryFn: () => fetchIpoInterest(ipoId as string), enabled: Boolean(ipoId), staleTime: 10 * 60 * 1000, retry: false });
 }
 
 export function useIpoSearch(search: string) {

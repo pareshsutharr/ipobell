@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { todayIST } from "@/lib/format";
+import { parseInterest, type IpoInterest } from "@/features/ipos/interest";
 import type { StateCount } from "@/features/ipos/states";
 import type {
   AnchorRow,
@@ -126,6 +127,13 @@ export async function fetchIpoStates(): Promise<Record<string, string>> {
     if (!data || data.length < 1000) break;
   }
   return out;
+}
+
+/** How many people watch this IPO / opened it this month. Totals only; small numbers come back as null. */
+export async function fetchIpoInterest(ipoId: string): Promise<IpoInterest> {
+  const { data, error } = await supabase.rpc("ipo_interest", { p_ipo_id: ipoId });
+  if (error) throw error;
+  return parseInterest(data);
 }
 
 export async function searchIpos(search: string, limit = 30): Promise<IpoListItem[]> {
