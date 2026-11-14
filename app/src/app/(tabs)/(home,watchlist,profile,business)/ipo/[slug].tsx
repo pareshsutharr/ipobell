@@ -15,6 +15,7 @@ import { DetailSkeleton } from "@/features/ipos/components/detail/DetailSkeleton
 import { DocumentsSection } from "@/features/ipos/components/detail/DocumentsSection";
 import { FinancialsSection } from "@/features/ipos/components/detail/FinancialsSection";
 import { GmpChartSection } from "@/features/ipos/components/detail/GmpChartSection";
+import { GrowthSection } from "@/features/ipos/components/detail/GrowthSection";
 import { HeroCard, IssueDetailsSection } from "@/features/ipos/components/detail/HeroCard";
 import { IntermediariesSection } from "@/features/ipos/components/detail/IntermediariesSection";
 import { ListingSection } from "@/features/ipos/components/detail/ListingSection";
@@ -66,6 +67,7 @@ export default function IpoDetailScreen() {
           >
             <HeroCard ipo={ipo} />
             {business ? insight.data ? <InsightSection insight={insight.data} ipo={ipo} /> : insight.isLoading ? null : <InsightEmpty ipo={ipo} /> : null}
+            {business ? <GrowthSection ipo={ipo} /> : null}
             <TimelineSection ipo={ipo} />
             {showSubscription ? <SubscriptionSection ipo={ipo} /> : null}
             <ListingSection ipo={ipo} />
