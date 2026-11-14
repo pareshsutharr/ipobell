@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { InsightEditor } from "@/components/insight/InsightEditor";
 import { IpoAdminDataForm } from "@/components/ipo/IpoAdminDataForm";
+import { IpoDocuments, type IpoDocumentRow } from "@/components/ipo/IpoDocuments";
 import { Badge, ErrorBanner, statusTone } from "@/components/ui";
 import { crore, dateRange, dateShort, inr, pct } from "@/lib/format";
 import { ADMIN_DATA_COLUMNS, normalizeSector, normalizeState, suggestPlatform, type IpoAdminData } from "@/lib/ipo-admin-data";
@@ -14,11 +15,12 @@ export const metadata = { title: "Insight editor" };
 export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">) {
   const { id } = await params;
   const supabase = await supabaseServer();
-  const [{ data: ipo, error }, { data: insight, error: insErr }, { data: adminData }] = await Promise.all([
+  const [{ data: ipo, error }, { data: insight, error: insErr }, { data: adminData }, { data: documents, error: docsErr }] = await Promise.all([
     supabase.from("ipos").select(IPO_LIST_COLUMNS).eq("id", id).maybeSingle(),
     supabase.from("ipo_insights").select("*").eq("ipo_id", id).maybeSingle(),
     // A missing table (migration not applied yet) just means "nothing entered"; the form explains it on save.
     supabase.from("ipo_admin_data").select(ADMIN_DATA_COLUMNS).eq("ipo_id", id).maybeSingle(),
+    supabase.from("ipo_documents_admin").select("id, doc_type, version, is_current, file_path, file_name, file_size, page_count, pages_with_text, text_status, text_error, created_at").eq("ipo_id", id).order("doc_type").order("version", { ascending: false }),
   ]);
   if (!ipo && !error) notFound();
 
@@ -77,6 +79,7 @@ export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">
               platformFrom: "the data feed",
             }}
           />
+          <IpoDocuments ipoId={row.id} initial={(documents ?? []) as IpoDocumentRow[]} notSetUp={Boolean(docsErr && /ipo_documents_admin|schema cache/i.test(docsErr.message))} />
           <InsightEditor ipo={row} initial={(insight as InsightRow | null) ?? null} />
         </>
       ) : null}
