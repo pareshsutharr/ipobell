@@ -4,13 +4,13 @@ import { Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function IpoFilters({ q, status, board, insight }: { q: string; status: string; board: string; insight: string }) {
+export function IpoFilters({ q, status, board, insight, data }: { q: string; status: string; board: string; insight: string; data: string }) {
   const router = useRouter();
   const path = usePathname();
   const [text, setText] = useState(q);
 
-  const apply = (patch: Partial<{ q: string; status: string; board: string; insight: string }>) => {
-    const next = { q: text, status, board, insight, ...patch };
+  const apply = (patch: Partial<{ q: string; status: string; board: string; insight: string; data: string }>) => {
+    const next = { q: text, status, board, insight, data, ...patch };
     const params = new URLSearchParams();
     Object.entries(next).forEach(([k, v]) => {
       if (v) params.set(k, v);
@@ -44,6 +44,7 @@ export function IpoFilters({ q, status, board, insight }: { q: string; status: s
       <Select value={status} onChange={(v) => apply({ status: v })} all="All statuses" options={[["open", "Open"], ["upcoming", "Upcoming"], ["closed", "Closed"], ["listed", "Listed"]]} />
       <Select value={board} onChange={(v) => apply({ board: v })} all="All boards" options={[["sme", "SME"], ["mainboard", "Mainboard"]]} />
       <Select value={insight} onChange={(v) => apply({ insight: v })} all="Any insight state" options={[["none", "No insight"], ["draft", "Draft"], ["published", "Published"]]} />
+      <Select value={data} onChange={(v) => apply({ data: v })} all="Any data state" options={[["incomplete", "Incomplete data"], ["complete", "Complete data"]]} />
     </form>
   );
 }

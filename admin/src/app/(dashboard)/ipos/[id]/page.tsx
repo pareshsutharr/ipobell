@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { InsightEditor } from "@/components/insight/InsightEditor";
+import { IpoAdminDataForm } from "@/components/ipo/IpoAdminDataForm";
 import { Badge, ErrorBanner, statusTone } from "@/components/ui";
 import { crore, dateRange, dateShort, inr, pct } from "@/lib/format";
+import { ADMIN_DATA_COLUMNS, normalizeSector, normalizeState, suggestPlatform, type IpoAdminData } from "@/lib/ipo-admin-data";
 import { supabaseServer } from "@/lib/supabase/server";
 import { IPO_LIST_COLUMNS, type InsightRow, type IpoRow } from "@/lib/types";
 
@@ -12,9 +14,11 @@ export const metadata = { title: "Insight editor" };
 export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">) {
   const { id } = await params;
   const supabase = await supabaseServer();
-  const [{ data: ipo, error }, { data: insight, error: insErr }] = await Promise.all([
+  const [{ data: ipo, error }, { data: insight, error: insErr }, { data: adminData }] = await Promise.all([
     supabase.from("ipos").select(IPO_LIST_COLUMNS).eq("id", id).maybeSingle(),
     supabase.from("ipo_insights").select("*").eq("ipo_id", id).maybeSingle(),
+    // A missing table (migration not applied yet) just means "nothing entered"; the form explains it on save.
+    supabase.from("ipo_admin_data").select(ADMIN_DATA_COLUMNS).eq("ipo_id", id).maybeSingle(),
   ]);
   if (!ipo && !error) notFound();
 
@@ -60,6 +64,19 @@ export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">
               </div>
             ))}
           </div>
+          <IpoAdminDataForm
+            ipoId={row.id}
+            initial={(adminData as unknown as IpoAdminData | null) ?? null}
+            suggestions={{
+              // Offered as one-click suggestions only; nothing is saved until the editor presses Save.
+              state: normalizeState((insight as InsightRow | null)?.location_state ?? ""),
+              stateFrom: "the insight",
+              sector: normalizeSector((insight as InsightRow | null)?.sector ?? ""),
+              sectorFrom: "the insight",
+              listing_platform: suggestPlatform(row.board, row.sub_type),
+              platformFrom: "the data feed",
+            }}
+          />
           <InsightEditor ipo={row} initial={(insight as InsightRow | null) ?? null} />
         </>
       ) : null}
