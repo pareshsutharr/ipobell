@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, Users } from "lucide-react";
+import { BarChart3, Bug, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/ipos", label: "IPOs & insights", icon: Building2 },
   { href: "/leads", label: "Leads", icon: MessageSquareText },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/errors", label: "App errors", icon: Bug },
   { href: "/admins", label: "Team access", icon: Users, superOnly: true },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;

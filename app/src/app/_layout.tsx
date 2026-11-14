@@ -11,6 +11,8 @@ import { useInsightsRealtime } from "@/features/insights/hooks";
 import { usePerspective } from "@/features/perspective/store";
 import { startAnalytics, trackScreen } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth/store";
+import { setErrorScreen, startErrorReporting } from "@/lib/errors";
+import { ErrorScreen } from "@/lib/errors/ErrorScreen";
 import { usePushNotifications } from "@/lib/notifications/push";
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from "@/lib/query";
 import { ThemeProvider, useTheme, useThemePreference } from "@/lib/theme/ThemeProvider";
@@ -19,6 +21,14 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 SplashScreen.setOptions({ fade: true, duration: 350 });
 
 export const unstable_settings = { anchor: "(tabs)" };
+
+// Installed at import time so errors thrown while the first screen is still loading are caught too.
+startErrorReporting();
+
+// expo-router renders this instead of a screen that threw while rendering.
+export function ErrorBoundary(props: { error: Error; retry: () => Promise<void> }) {
+  return <ErrorScreen {...props} />;
+}
 
 export default function RootLayout() {
   // If a font file fails to download (dev server unreachable, flaky network) we still show the app with the system font.
@@ -65,6 +75,7 @@ function Shell() {
   const params = useGlobalSearchParams();
   useEffect(() => {
     if (pathname) trackScreen(pathname, params as Record<string, unknown>);
+    setErrorScreen(pathname ?? null);
   }, [pathname, params]);
   return (
     <>
