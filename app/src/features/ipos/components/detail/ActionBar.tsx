@@ -29,6 +29,7 @@ export function ActionBar({ ipo }: { ipo: Ipo }) {
       ) : (
         <Button title="Add to watchlist & get alerts" variant="dark" onPress={() => router.push("/notifications")} style={{ flex: 1 }} fullWidth />
       )}
+      <IconButton icon="git-compare-outline" accessibilityLabel="Compare with another IPO" onPress={() => router.push({ pathname: "/compare", params: { slugs: ipo.slug } })} />
       <IconButton icon="share-social-outline" accessibilityLabel="Share" onPress={() => shareIpo(ipo)} />
     </View>
   );
