@@ -28,11 +28,18 @@ export function stateToParam(state: string | null | undefined): string {
 export function paramToState(param: string | string[] | undefined): string | null {
   const p = Array.isArray(param) ? param[0] : param;
   if (!p || p === NOT_SPECIFIED_PARAM) return null;
-  try {
-    return decodeURIComponent(p);
-  } catch {
-    return p;
+  // Decode until stable: the router may or may not have decoded the value already (names never contain "%").
+  let out = p;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const next = decodeURIComponent(out);
+      if (next === out) break;
+      out = next;
+    } catch {
+      break;
+    }
   }
+  return out;
 }
 
 /** Named states by number of IPOs (most first, then A to Z); the "Not specified" group is returned separately. */
@@ -57,5 +64,5 @@ export function statusBreakdown(c: Pick<StateCount, IpoStatus>): string {
 /** The database objects for this feature may not exist yet on an older backend. */
 export function isNotSetUpError(error: unknown): boolean {
   const e = error as { code?: string; message?: string } | null;
-  return Boolean(e && (e.code === "PGRST202" || e.code === "PGRST205" || e.code === "42P01" || e.code === "42883" || /ipo_state_counts|ipo_directory|schema cache/i.test(e.message ?? "")));
+  return Boolean(e && (e.code === "PGRST202" || e.code === "PGRST205" || e.code === "42P01" || e.code === "42883" || /ipo_state_counts|ipo_sector_stats|ipo_directory|schema cache/i.test(e.message ?? "")));
 }

@@ -58,6 +58,7 @@ export default function BusinessScreen() {
           <ToolCard icon="calculator-outline" title="Issue Size Calculator" subtitle="How much could your company raise? PAT × sector multiple with a growth premium." meta="≈ 1 min" tone="gain" onPress={() => router.push("/business/issue-size")} />
           <ToolCard icon="receipt-outline" title="Issue Cost Estimator" subtitle="Lead manager, underwriting, market making, registrar… the full cost of an SME IPO, stage by stage." meta="≈ 1 min" tone="warning" onPress={() => router.push("/business/issue-cost")} />
           <ToolCard icon="checkbox-outline" title="SME IPO Listing Checklist" subtitle="32 steps from eligibility to post-listing compliance. Tick them off as you go." meta="Saved on this device" tone="info" onPress={() => router.push("/business/checklist")} />
+          <ToolCard icon="pie-chart-outline" title="IPOs by Sector" subtitle="How many companies in your sector have listed, how they were subscribed and how they listed." meta="Live from our IPO data" tone="mainboard" onPress={() => router.push("/sectors")} />
         </View>
 
         {/* Why SME IPO */}

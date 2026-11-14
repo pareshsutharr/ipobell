@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { todayIST } from "@/lib/format";
 import { parseInterest, type IpoInterest } from "@/features/ipos/interest";
+import { parseSectorStat, type SectorStat } from "@/features/ipos/sectors";
 import type { StateCount } from "@/features/ipos/states";
 import type {
   AnchorRow,
@@ -107,6 +108,27 @@ export interface DirectoryPage {
 export async function fetchIposByState(state: string | null, status: IpoStatus | null, offset: number, pageSize: number): Promise<DirectoryPage> {
   let q = supabase.from("ipo_directory").select(`${LIST_COLUMNS}, state, sector, industry, listing_platform`, { count: "exact" });
   q = state === null ? q.is("state", null) : q.eq("state", state);
+  if (status) q = q.eq("status", status);
+  const { data, error, count } = await q
+    .order("open_date", { ascending: false, nullsFirst: false })
+    .order("slug", { ascending: true })
+    .range(offset, offset + pageSize - 1);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as IpoDirectoryItem[];
+  return { rows, total: count ?? offset + rows.length, offset };
+}
+
+/** Per-sector counts and averages. The row with `sector: null` is "Not specified". */
+export async function fetchSectorStats(board: Board | null): Promise<SectorStat[]> {
+  const { data, error } = await supabase.rpc("ipo_sector_stats", { p_board: board });
+  if (error) throw error;
+  return ((data ?? []) as Record<string, unknown>[]).map(parseSectorStat);
+}
+
+/** One page of the IPOs in a sector (`sector: null` = no sector entered), newest first. */
+export async function fetchIposBySector(sector: string | null, status: IpoStatus | null, offset: number, pageSize: number): Promise<DirectoryPage> {
+  let q = supabase.from("ipo_directory").select(`${LIST_COLUMNS}, state, sector, industry, listing_platform`, { count: "exact" });
+  q = sector === null ? q.is("sector", null) : q.eq("sector", sector);
   if (status) q = q.eq("status", status);
   const { data, error, count } = await q
     .order("open_date", { ascending: false, nullsFirst: false })

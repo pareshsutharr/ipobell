@@ -11,11 +11,13 @@ import {
   fetchIpos,
   fetchIpoInterest,
   fetchIpoStates,
+  fetchIposBySector,
   fetchIposByState,
   fetchIposPage,
   fetchLatestSubscription,
   fetchListed,
   fetchListingStats,
+  fetchSectorStats,
   fetchStateCounts,
   fetchSubscriptionTrend,
   searchIpos,
@@ -53,6 +55,21 @@ export function useIposByState(state: string | null, status: IpoStatus | null) {
   return useInfiniteQuery({
     queryKey: qk.iposByState(state, status),
     queryFn: ({ pageParam }) => fetchIposByState(state, status, pageParam, IPO_PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => nextOffset(last, pages),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useSectorStats(board: Board | null) {
+  return useQuery({ queryKey: qk.sectorStats(board), queryFn: () => fetchSectorStats(board), staleTime: 10 * 60 * 1000, retry: 1 });
+}
+
+export function useIposBySector(sector: string | null, status: IpoStatus | null) {
+  return useInfiniteQuery({
+    queryKey: qk.iposBySector(sector, status),
+    queryFn: ({ pageParam }) => fetchIposBySector(sector, status, pageParam, IPO_PAGE_SIZE),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => nextOffset(last, pages),
     staleTime: 5 * 60 * 1000,

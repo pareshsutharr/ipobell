@@ -113,6 +113,7 @@ export default function HomeScreen() {
         <FilterChip label="Mainboard" selected={board === "mainboard"} onPress={() => setBoard("mainboard")} />
         <FilterChip label="SME" selected={board === "sme"} onPress={() => setBoard("sme")} />
         <FilterChip label="By state" icon="location-outline" onPress={() => router.push("/states")} />
+        <FilterChip label="By sector" icon="pie-chart-outline" onPress={() => router.push("/sectors")} />
         <FilterChip label="Compare" icon="git-compare-outline" onPress={() => router.push("/compare")} />
       </ScrollView>
       {segment === "listed" ? (
