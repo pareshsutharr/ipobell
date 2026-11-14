@@ -13,7 +13,6 @@ IPO Guru API ─▶ beipoready.com sync ─▶ MongoDB ─▶ /api/ipo-data (mir
                                           ▲
  pg_cron ─▶ daily-reminders (08:30 / 15:00 / 19:00 IST) ┘
  App ─▶ supabase-js (RLS) ─▶ watchlist / notification_preferences / device_tokens / profiles
- App ─▶ verify-purchase (user JWT) ─▶ Google Play Developer API ─▶ profiles.is_premium
 ```
 
 ## Data source: the Be IPO Ready mirror (no IPO Guru calls from this app)
@@ -47,10 +46,10 @@ Error handling (`_shared/ipo-data.ts`): 401/403 → fatal, the run fails with "c
 ## Security model
 
 - `ipos*` tables: public `select`, writes only through the service role (Edge Functions).
-- `profiles`, `device_tokens`, `notification_preferences`, `watchlist`: RLS `auth.uid() = user_id`; `is_premium`/`premium_until` are frozen for clients by a trigger.
+- `profiles`, `device_tokens`, `notification_preferences`, `watchlist`: RLS `auth.uid() = user_id`; `is_premium`/`premium_until` are frozen for clients by a trigger (unused: there is no Premium tier, see "Unused leftovers" below).
 - `notification_log`, `sync_runs`, `purchases` (write): service role only. `private` schema is not exposed; the only public wrapper (`notification_recipients`) has `execute` revoked from `anon`/`authenticated`.
-- Cron → function auth: `x-cron-secret` header compared in constant time against `CRON_SECRET`; `verify-purchase` / `delete-account` require a user JWT (`verify_jwt = true`).
-- Anonymous users use the `authenticated` role; a free-tier watchlist cap (10) is enforced in a trigger.
+- Cron → function auth: `x-cron-secret` header compared in constant time against `CRON_SECRET`; `delete-account` and `test-push` require a user JWT (`verify_jwt = true`).
+- Anonymous users use the `authenticated` role; a watchlist cap of 50 IPOs per account is enforced in a trigger (`enforce_watchlist_limit`).
 
 ## App data layer
 
@@ -99,3 +98,23 @@ Error handling (`_shared/ipo-data.ts`): 401/403 → fatal, the run fails with "c
 - **Server** `supabase/migrations/20261029000300_analytics.sql`: `analytics_events` (RLS: admins read; inserts only via the security-definer RPC, which caps batches at 100 and silently drops after 3000 events/user/hour). Admin-only read RPCs: `analytics_overview`, `analytics_daily`, `analytics_users`, `analytics_user_events`. Raw events are pruned after 18 months by `ipobell-prune-analytics` (pg_cron, Sundays 21:30 UTC).
 - **Admin panel** `/analytics` (overview, audience split, daily chart, tool funnel, top screens / IPOs / insights / links / searches; an audience filter restricts everything to investors or business owners — `analytics_overview(p_from, p_to, p_audience)` / `analytics_daily(…, p_audience)`), `/analytics/audience` (per-person table with event timeline and CSV export), `/analytics/journeys` (per person × tool: started / completed / submitted, last result, contact — `analytics_tool_journeys(p_from, p_to, p_tool, p_stage, p_audience, p_limit)`, stages `started` | `completed` | `submitted` | `not_submitted`), `/analytics/events` (raw explorer).
 - **Taxonomy**: app_open, screen_view, sign_in, role_selected, perspective_switch, ipo_view, insight_view, latest_insight_tap, watchlist, search, tool_start, tool_complete, tool_restart, lead_submit, external_link, share, calendar_add, allotment_check, notification_pref, push_open. Tools: readiness, eligibility, issue_size, issue_cost, checklist, book_call.
+
+## Safety and hygiene additions (14 Nov 2026)
+
+Migrations `20261114000100` to `20261114000500`. Each is written to be applied in any order relative to a function deploy.
+
+- **Sync watchdog** (`functions/sync-watchdog`, logic in `_shared/watchdog.ts`): pg_cron `ipobell-sync-watchdog` at :10 and :40. Unhealthy when the last 3 finished runs failed (a run unfinished after 10 minutes counts as failed) or there has been no successful run for 2 hours in market time (08:30–18:30 IST) / 4 hours otherwise. One e-mail when it turns unhealthy, a reminder every 6 hours, one on recovery. Recipients: `app_settings.sync_alerts` (`{enabled, emails[]}`), falling back to `LEAD_NOTIFY_DEFAULT_EMAIL`; state in `app_settings.sync_watchdog_state`. `POST {"dry":true}` returns the assessment without sending; `{"test":true}` sends a sample. Uses the same `SMTP_*` secrets as `notify-lead` through `_shared/mail.ts`.
+- **Lead forwarding with retry** (`20261114000200`): the insert trigger now calls `private.send_lead_forward()`, which stores the pg_net request id. `private.reconcile_lead_forwards()` (pg_cron `ipobell-lead-forward-retry`, every 5 minutes) reads `net._http_response`: HTTP 2xx stamps `forwarded_at`; anything else writes `forward_error` and re-sends after 5, 10, 20 and 40 minutes, giving up after 5 attempts. Leads older than this migration are never re-sent. A retry after a lost response can deliver a lead twice; the message carries the lead id so the website can de-duplicate.
+- **Raw feed payload is private** (`20261114000300`): `ipos.raw_data` is always `{}`. A BEFORE trigger moves whatever the sync writes there into `public.ipo_raw_data` (keyed by slug, `list` and `detail`, service role only). `sync-ipos` is unchanged. The empty column stays so released apps that `select *` keep working; drop it once the function stops writing it.
+- **Error reporting** (`20261114000400`, `app/src/lib/errors`): uncaught JS errors (`ErrorUtils` global handler), screens that fail to render (root `ErrorBoundary` → `ErrorScreen`) and `reportError()` calls are scrubbed of PANs, e-mails, phone numbers and tokens, throttled (one per fingerprint per minute, 10 per minute overall), saved to AsyncStorage and sent to `public.report_errors(jsonb)` once a session exists (20 per call, 60 per user per hour). Admin panel → **App errors** reads `public.app_error_groups()`. Rows are pruned after 90 days. Not covered: native crashes before JavaScript starts (needs a native crash SDK and a new build).
+- **Admin outbound requests** (`admin/src/lib/safe-fetch.ts`): `import-image`, `logo-hero` and media discovery fetch outside URLs only through `safeFetch`, which allows http/https on default ports, refuses any host that is or resolves to a private, loopback, link-local or reserved address (IPv4 and IPv6, including mapped forms), re-checks each redirect and follows at most 3. Known limit: DNS is resolved once for the check and again by `fetch` (rebinding is not covered). `next.config.ts` allows optimised images only from Supabase storage, so `/_next/image` is no longer an open proxy.
+- **CI** (`.github/workflows/ci.yml`): app (type check, lint, jest, jsdom tests), supabase (`node --test supabase/tests/*.test.ts`), admin (`next typegen`, type check, tests). No secrets needed.
+
+### Testing migrations locally
+
+There is no local Supabase stack in the repo. The migrations in this section were exercised against a throwaway local Postgres with small stand-ins for `auth`, `vault`, `cron`, `net` and `storage`. Edge Functions (Deno) were not executed locally: their decision logic lives in `_shared/*.ts` modules covered by `supabase/tests`, but the first real run of a new function is in the hosted project.
+
+### Unused leftovers
+
+`public.purchases`, `profiles.is_premium`, `premium_until`, `premium_product_id` and the `protect_premium_columns` trigger remain from the removed Premium tier (27 Oct 2026). Nothing reads or writes them; they are marked as unused with table and column comments (`20261114000500`) and kept because released app versions still select `profiles.*`. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` in `supabase/.env.example` is likewise unused.
+

@@ -5,26 +5,26 @@ React Native (Expo SDK 58) + Supabase (Postgres, Edge Functions, pg_cron, Realti
 ```
 IPOBELL/
 ├── app/                        # Expo app (TypeScript, expo-router)
-│   ├── app.config.ts           # Expo config + plugins (notifications, ads, IAP, calendar…)
+│   ├── app.config.ts           # Expo config + plugins (notifications, calendar, build properties…)
 │   ├── eas.json                # EAS build/submit profiles
 │   ├── .env.example            # EXPO_PUBLIC_* runtime config
 │   └── src/
 │       ├── app/                # routes: (tabs)/ IPOs|Watchlist|Get Listed|Profile, allotment, ipo/[slug], applications/*, search, notifications, about, legal/*
 │       ├── components/ui/      # design system primitives (Text, Card, Button, Chip, Skeleton, Section, SegmentedControl…)
 │       ├── features/           # ipos (types/api/hooks/components), watchlist, …
-│       ├── lib/                # env, supabase client, react-query, theme, format, auth, notifications, ads, iap
+│       ├── lib/                # env, supabase client, react-query, theme, format, auth, notifications, analytics, errors
 │       └── __tests__/          # jest
 ├── supabase/
 │   ├── migrations/             # 000100 schema+RLS, 000200 pg_cron, 20261027 allotment tracker, 20261028 business_leads, 20261029 roles/admins/insights
-│   ├── functions/              # sync-ipos, send-notifications, daily-reminders, check-allotments, test-push, delete-account, _shared/
-│   ├── tests/                  # node --test (mappers, change detection, dedupe keys)
+│   ├── functions/              # sync-ipos, send-notifications, daily-reminders, check-allotments, test-push, delete-account, notify-lead, sync-watchdog, _shared/
+│   ├── tests/                  # node --test (mappers, change detection, dedupe keys, watchdog)
 │   ├── config.toml             # per-function verify_jwt
 │   ├── .env.example            # Edge Function secrets
 │   └── deploy.sh
 ├── admin/                      # Next.js admin panel (insights editor, leads, admins) — deployed on Vercel
 └── docs/
     ├── PRODUCT_BRIEF.md        # approved phase-2 spec (two audiences, perspectives, insights, admin)
-    ├── SETUP.md                # step-by-step: Supabase, Firebase/FCM, Google sign-in, AdMob, Play Billing
+    ├── SETUP.md                # step-by-step: Supabase, Firebase/FCM, Google sign-in
     ├── RELEASE_CHECKLIST.md    # signing, closed testing, data safety, store listing
     └── ARCHITECTURE.md         # data flow, notification pipeline, API budget
 ```
@@ -44,7 +44,7 @@ npx expo prebuild --platform android
 npx expo run:android            # or: npx eas-cli build --profile development --platform android
 ```
 
-Tests: `node --test supabase/tests` (backend mappers/registrars), `cd app && npx jest` (app), and `cd app && npm run test:dom` (jsdom tests of the injected registrar script against KFintech-style result pages). Type-check: `cd app && npx tsc --noEmit`. Lint: `npx expo lint`.
+Tests: `node --test supabase/tests/*.test.ts` (backend mappers, registrars, watchdog; a bare directory fails on Node 24), `cd admin && npm test` (URL guard), `cd app && npx jest` (app), and `cd app && npm run test:dom` (jsdom tests of the injected registrar script against KFintech-style result pages). Type-check: `cd app && npx tsc --noEmit`. Lint: `npx expo lint`.
 
 ## What's live right now
 
@@ -52,7 +52,8 @@ Tests: `node --test supabase/tests` (backend mappers/registrars), `cd app && npx
 |---|---|
 | Postgres schema, RLS, indexes, realtime publication | applied |
 | pg_cron: sync every 15 min (08:30–18:29 IST), hourly otherwise, full backfill 06:50 IST, reminders 08:30 / 15:00 / 19:00 IST, weekly housekeeping | scheduled |
-| Edge Functions ×5 | deployed |
+| Edge Functions: sync-ipos, send-notifications, daily-reminders, check-allotments, test-push, delete-account, notify-lead | deployed |
+| Edge Function `sync-watchdog` and migrations `20261114000100`–`20261114000500` (sync alerts, lead forward retry, private raw feed data, error reporting) | written 14 Nov 2026, **not applied yet** |
 | Secrets: `IPO_API_KEY` (Be IPO Ready `bpr_…` connector key), `IPO_API_BASE_URL` (`https://beipoready.com/api/ipo-data`), `CRON_SECRET`, `ANDROID_PACKAGE_NAME`, `GMP_ALERT_THRESHOLD_PCT` | set (mirror cutover 30 Oct 2026, sync-ipos v10) |
 | `FCM_SERVICE_ACCOUNT_JSON` | set (27 Oct 2026) |
 | Anonymous auth | enabled |

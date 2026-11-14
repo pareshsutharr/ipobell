@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, expect, it } from "@jest/globals";
 import * as fs from "fs";
 import * as path from "path";

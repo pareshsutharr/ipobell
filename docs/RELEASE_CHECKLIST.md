@@ -3,7 +3,8 @@
 ## A. Local run & smoke test
 
 - [ ] `cd app && npm install && npx tsc --noEmit && npx expo lint && npx jest`
-- [ ] `node --test supabase/tests`
+- [ ] `node --test supabase/tests/*.test.ts` (a bare directory fails on Node 24)
+- [ ] `cd admin && npm run typecheck && npm test`
 - [ ] `app/google-services.json` present; `app/.env` filled (Supabase publishable key at minimum)
 - [ ] `npx expo prebuild --platform android && npx expo run:android` on a physical device
 - [ ] Onboarding → allow notifications → `select count(*) from device_tokens` increases
@@ -13,7 +14,6 @@
 - [ ] Airplane mode: cached lists still render (react-query persister)
 - [ ] Test push (docs/SETUP.md §2.6) arrives, tapping opens the IPO
 - [ ] Dark/light theme switch
-- [ ] Premium: Play licence tester can purchase on an internal-testing build; `profiles.is_premium` flips
 
 ## B. Backend health
 
