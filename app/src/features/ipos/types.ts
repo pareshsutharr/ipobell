@@ -107,6 +107,14 @@ export interface IpoListItem {
   registrar: Registrar | null;
 }
 
+/** A row of public.ipo_directory: the list columns plus what the team entered (null = not entered). */
+export interface IpoDirectoryItem extends IpoListItem {
+  state: string | null;
+  sector: string | null;
+  industry: string | null;
+  listing_platform: "nse_emerge" | "bse_sme" | "mainboard" | null;
+}
+
 export interface Ipo extends IpoListItem {
   api_status: string | null;
   stage: string | null;

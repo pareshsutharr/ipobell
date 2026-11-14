@@ -9,10 +9,13 @@ import {
   fetchGmpHistory,
   fetchIpo,
   fetchIpos,
+  fetchIpoStates,
+  fetchIposByState,
   fetchIposPage,
   fetchLatestSubscription,
   fetchListed,
   fetchListingStats,
+  fetchStateCounts,
   fetchSubscriptionTrend,
   searchIpos,
   type ListFilters,
@@ -39,6 +42,32 @@ export function useIposPaged(status: IpoStatus, filters: ListFilters = {}) {
     getNextPageParam: (last, pages) => nextOffset(last, pages),
     staleTime: 5 * 60 * 1000,
   });
+}
+
+export function useStateCounts(board: Board | null) {
+  return useQuery({ queryKey: qk.stateCounts(board), queryFn: () => fetchStateCounts(board), staleTime: 10 * 60 * 1000, retry: 1 });
+}
+
+export function useIposByState(state: string | null, status: IpoStatus | null) {
+  return useInfiniteQuery({
+    queryKey: qk.iposByState(state, status),
+    queryFn: ({ pageParam }) => fetchIposByState(state, status, pageParam, IPO_PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => nextOffset(last, pages),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+/** State per IPO id, shared by every list row (one small request, cached for half an hour). */
+export function useIpoStates() {
+  return useQuery({ queryKey: qk.ipoStates(), queryFn: fetchIpoStates, staleTime: 30 * 60 * 1000, retry: 1 });
+}
+
+/** The state entered for one IPO, or undefined when none is entered. */
+export function useIpoState(ipoId: string | undefined): string | undefined {
+  const { data } = useIpoStates();
+  return ipoId ? data?.[ipoId] : undefined;
 }
 
 export function useIpoSearch(search: string) {

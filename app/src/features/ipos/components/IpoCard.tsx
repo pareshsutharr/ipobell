@@ -9,6 +9,7 @@ import { Text } from "@/components/ui/Text";
 import { useInsightMarker } from "@/features/insights/hooks";
 import { verdictMeta } from "@/features/insights/verdict";
 import { boardLabel, CompanyLogo, GainText, GmpChip, statusLabel, statusTone } from "@/features/ipos/components/IpoBits";
+import { useIpoState } from "@/features/ipos/hooks";
 import { usePerspective } from "@/features/perspective/store";
 import { retailMinimumAmount } from "@/features/ipos/lots";
 import type { IpoListItem } from "@/features/ipos/types";
@@ -46,6 +47,9 @@ export const IpoCard = memo(function IpoCard({ ipo, onWatchlistLimit }: Props) {
   const business = usePerspective((s) => s.perspective) === "business";
   const marker = useInsightMarker(business ? ipo.id : undefined);
   const markerTone = useToneColors(marker ? verdictMeta(marker.verdict).tone : "neutral");
+  // Rows from the state-wise list carry their state; other lists look it up from the shared map.
+  const lookedUp = useIpoState(ipo.id);
+  const state = (ipo as { state?: string | null }).state ?? lookedUp;
 
   const onStar = () => {
     track("watchlist", { action: watched ? "remove" : "add", slug: ipo.slug, name: ipo.display_name ?? ipo.name });
@@ -86,7 +90,8 @@ export const IpoCard = memo(function IpoCard({ ipo, onWatchlistLimit }: Props) {
               </View>
             ) : null}
             <Text variant="caption" color="textMuted" numberOfLines={1} style={{ flexShrink: 1 }}>
-              {boardLabel(ipo.board, ipo.sub_type)} · {dates}
+              {boardLabel(ipo.board, ipo.sub_type)}
+              {state ? ` · ${state}` : ""} · {dates}
             </Text>
           </View>
         </View>

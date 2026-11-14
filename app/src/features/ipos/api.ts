@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { todayIST } from "@/lib/format";
+import type { StateCount } from "@/features/ipos/states";
 import type {
   AnchorRow,
   Board,
@@ -7,6 +8,7 @@ import type {
   FinancialRow,
   GmpPoint,
   Ipo,
+  IpoDirectoryItem,
   IpoListItem,
   IpoStatus,
   ListingStats,
@@ -78,6 +80,52 @@ export async function fetchIposPage(status: IpoStatus, filters: ListFilters, off
   if (error) throw error;
   const rows = (data ?? []) as unknown as IpoListItem[];
   return { rows, total: count ?? offset + rows.length, offset };
+}
+
+/** IPOs per state (registered office), split by status. The row with `state: null` is "Not specified". */
+export async function fetchStateCounts(board: Board | null): Promise<StateCount[]> {
+  const { data, error } = await supabase.rpc("ipo_state_counts", { p_board: board });
+  if (error) throw error;
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+    state: (r.state as string | null) ?? null,
+    total: Number(r.total ?? 0),
+    open: Number(r.open ?? 0),
+    upcoming: Number(r.upcoming ?? 0),
+    closed: Number(r.closed ?? 0),
+    listed: Number(r.listed ?? 0),
+  }));
+}
+
+export interface DirectoryPage {
+  rows: IpoDirectoryItem[];
+  total: number;
+  offset: number;
+}
+
+/** One page of the IPOs in a state (`state: null` = no state entered), newest first. */
+export async function fetchIposByState(state: string | null, status: IpoStatus | null, offset: number, pageSize: number): Promise<DirectoryPage> {
+  let q = supabase.from("ipo_directory").select(`${LIST_COLUMNS}, state, sector, industry, listing_platform`, { count: "exact" });
+  q = state === null ? q.is("state", null) : q.eq("state", state);
+  if (status) q = q.eq("status", status);
+  const { data, error, count } = await q
+    .order("open_date", { ascending: false, nullsFirst: false })
+    .order("slug", { ascending: true })
+    .range(offset, offset + pageSize - 1);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as IpoDirectoryItem[];
+  return { rows, total: count ?? offset + rows.length, offset };
+}
+
+/** State of every IPO that has one, for the small label on list rows. Paged because the API returns 1000 rows at most. */
+export async function fetchIpoStates(): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data, error } = await supabase.from("ipo_admin_data").select("ipo_id, state").not("state", "is", null).order("ipo_id").range(from, from + 999);
+    if (error) throw error;
+    for (const r of (data ?? []) as { ipo_id: string; state: string }[]) out[r.ipo_id] = r.state;
+    if (!data || data.length < 1000) break;
+  }
+  return out;
 }
 
 export async function searchIpos(search: string, limit = 30): Promise<IpoListItem[]> {
