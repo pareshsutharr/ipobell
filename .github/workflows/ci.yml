@@ -73,3 +73,6 @@ jobs:
         run: npx tsc --noEmit
       - name: Unit tests
         run: npm test
+      # The Edge Functions run on Deno; this checks their types with plain TypeScript and small stand-ins.
+      - name: Type check Edge Functions
+        run: npm run typecheck:functions

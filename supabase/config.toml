@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.sync-watchdog]
 verify_jwt = false
+
+[functions.ask-drhp]
+verify_jwt = true
