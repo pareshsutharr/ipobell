@@ -112,9 +112,15 @@ Migrations `20261114000100` to `20261114000500`. Each is written to be applied i
 
 ### Testing migrations locally
 
-There is no local Supabase stack in the repo. The migrations in this section were exercised against a throwaway local Postgres with small stand-ins for `auth`, `vault`, `cron`, `net` and `storage`. Edge Functions (Deno) were not executed locally: their decision logic lives in `_shared/*.ts` modules covered by `supabase/tests`, but the first real run of a new function is in the hosted project.
+There is no local Supabase stack in the repo. `supabase/scripts/local-test-db/up.sh` starts a throwaway local Postgres with small stand-ins for `auth`, `vault`, `cron`, `net` and `storage` (`stubs.sql`) and applies every migration; the migrations in this section were exercised against it. Edge Functions (Deno) were not executed locally: their decision logic lives in `_shared/*.ts` modules covered by `supabase/tests`, but the first real run of a new function is in the hosted project.
 
 ### Unused leftovers
 
 `public.purchases`, `profiles.is_premium`, `premium_until`, `premium_product_id` and the `protect_premium_columns` trigger remain from the removed Premium tier (27 Oct 2026). Nothing reads or writes them; they are marked as unused with table and column comments (`20261114000500`) and kept because released app versions still select `profiles.*`. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` in `supabase/.env.example` is likewise unused.
+
+## Team-entered IPO data (14 Nov 2026)
+
+The feed has no state or sector, so staff enter them. `public.ipo_admin_data` (`20261114000600`, one row per IPO): `state` (CHECK against the 28 states and 8 union territories), `sector`, `industry`, `listing_platform` (`nse_emerge` | `bse_sme` | `mainboard`), `is_promoted` (reserved, unused). Everyone reads; only admins write; `sync-ipos` never touches it. A missing row or null field means "not entered": clients show "Not specified".
+
+Admin panel: the IPO page has an "IPO data entered by the team" form (suggestions from the insight and the feed are one-click, never auto-saved); **IPOs → Import state & sector (CSV)** downloads a sheet of every IPO and imports the filled sheet (matched by slug, blank cell = leave as is, a line with an invalid value is rejected and reported, nothing is guessed); the IPO list shows a Complete / Incomplete badge and filter. Lists and CSV logic: `admin/src/lib/ipo-admin-data.ts`, tested in `admin/tests/ipo-admin-data.test.ts` (which also checks the state list against the migration and the sector list against the app's `SECTOR_PE`).
 
