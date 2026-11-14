@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 
 import { Button, Card, PressableScale, Screen, Text } from "@/components/ui";
 import { ToolCard } from "@/features/business/components/Fields";
+import { CaseStudies } from "@/features/business/components/CaseStudies";
 import { InterestCard } from "@/features/business/components/InterestCard";
 import { LeadForm } from "@/features/business/components/LeadForm";
 import { PageHeader } from "@/features/shell/components/PageHeader";
@@ -78,22 +79,8 @@ export default function BusinessScreen() {
           </View>
         </View>
 
-        {/* Proof */}
-        <Card variant="alt" style={{ gap: 8 }}>
-          <Text variant="overline" color="textFaint">
-            Case study
-          </Text>
-          <Text variant="h3">Aaron Industries · NSE Emerge</Text>
-          <Text variant="bodySm" color="textMuted">
-            A Surat elevator manufacturer listed in 2018 with a ₹4.9 Cr issue at ₹38 a share. Revenue has since grown from about ₹9 Cr to over ₹75 Cr, and the stock has multiplied many times over.
-          </Text>
-          <PressableScale onPress={() => open(env.links.caseStudies, "Case studies")} accessibilityRole="link" style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-            <Text variant="label" color="brand">
-              More case studies
-            </Text>
-            <Ionicons name="open-outline" size={13} color={colors.brand} />
-          </PressableScale>
-        </Card>
+        {/* Case studies written by the team in the admin panel */}
+        <CaseStudies />
 
         {/* Services */}
         <View style={{ gap: 10 }}>

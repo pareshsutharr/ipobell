@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Bug, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, SlidersHorizontal, Users } from "lucide-react";
+import { BarChart3, BookOpen, Bug, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, SlidersHorizontal, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +9,7 @@ import type { AdminRole } from "@/lib/types";
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/ipos", label: "IPOs & insights", icon: Building2 },
+  { href: "/case-studies", label: "Case studies", icon: BookOpen },
   { href: "/leads", label: "Leads", icon: MessageSquareText },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/rules", label: "Business rules", icon: SlidersHorizontal },

@@ -148,3 +148,11 @@ Admin panel: the IPO page has an "IPO data entered by the team" form (suggestion
 - **Compare my company** (`/business/peers`): the owner's revenue, EBITDA, PAT, debt and net worth against the peers' middle half; "above / in line / below most peers" only when at least 3 peers have the figure. Peers do not report EBITDA, so that row shows the owner's figure alone. Inputs stay on the phone unless sent through the lead form.
 - Both tools send leads with source `business-hub` and the tool name in the payload.
 
+## Case studies (14 Nov 2026)
+
+`public.case_studies` (`20261114001300`): slug, title, exchange, listing year, city, summary (card text), body (paragraphs separated by blank lines), highlights, hero image, order, draft / published. Published rows are public; admins see and edit everything. Seeded with the one case study the app used to carry in code, word for word.
+
+Admin panel → **Case studies**: list, editor (title fills the link name until it is edited; Save draft / Publish / Unpublish / Delete; image upload to the `insights` bucket under `case-studies/`). Save checks in `admin/src/lib/case-studies.ts`; publishing also requires the exchange and listing year.
+
+App: `CaseStudies` on the Get Listed tab shows up to three cards and a "See all" link; `/business/case-studies` lists all, `/business/case-studies/[slug]` shows one with a lead form (source `business-hub`, payload "Case study read"). The hard-coded card is gone. If the list cannot be loaded at all (older backend, or offline with nothing cached) the app shows its bundled copy of that one case study; if the team has published none, the section is hidden.
+
