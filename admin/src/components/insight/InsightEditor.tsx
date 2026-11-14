@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { Badge, Button, Card, ErrorBanner, statusTone } from "@/components/ui";
+import { EDITOR_PUBLISH_NOTE, reviewError } from "@/lib/review";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { emptyInsight, VERDICT_LABEL, type InsightDraft, type InsightRow, type IpoRow, type Verdict } from "@/lib/types";
 import type { GenerateResponse, MediaImage, MediaVideo } from "@/app/api/insights/generate/route";
@@ -39,7 +40,7 @@ function toDraft(row: InsightRow): InsightDraft {
   };
 }
 
-export function InsightEditor({ ipo, initial }: Props) {
+export function InsightEditor({ ipo, initial, canPublish = true }: Props & { canPublish?: boolean }) {
   const router = useRouter();
   const [draft, setDraft] = useState<InsightDraft>(initial ? toDraft(initial) : emptyInsight(ipo.id));
   const [exists, setExists] = useState(Boolean(initial));
@@ -72,7 +73,7 @@ export function InsightEditor({ ipo, initial }: Props) {
     const { error: err } = await supabaseBrowser().from("ipo_insights").upsert(payload, { onConflict: "ipo_id" });
     setBusy(null);
     if (err) {
-      setError(err.message.includes("row-level security") ? "You do not have permission to write insights. Check your admin access." : err.message);
+      setError(reviewError(err.message, "an insight"));
       return;
     }
     setDraft((d) => ({ ...d, status }));
@@ -86,7 +87,7 @@ export function InsightEditor({ ipo, initial }: Props) {
     setError(null);
     const { error: err } = await supabaseBrowser().from("ipo_insights").update({ status: "draft" }).eq("ipo_id", ipo.id);
     setBusy(null);
-    if (err) return setError(err.message);
+    if (err) return setError(reviewError(err.message, "an insight"));
     setDraft((d) => ({ ...d, status: "draft" }));
     setSaved("Unpublished. The insight is hidden from the app until you publish again.");
     router.refresh();
@@ -97,7 +98,7 @@ export function InsightEditor({ ipo, initial }: Props) {
     setBusy("delete");
     const { error: err } = await supabaseBrowser().from("ipo_insights").delete().eq("ipo_id", ipo.id);
     setBusy(null);
-    if (err) return setError(err.message);
+    if (err) return setError(reviewError(err.message, "an insight"));
     setDraft(emptyInsight(ipo.id));
     setExists(false);
     setSaved("Insight deleted.");
@@ -229,7 +230,7 @@ export function InsightEditor({ ipo, initial }: Props) {
                 <Trash2 size={14} /> Delete
               </Button>
             ) : null}
-            {exists && draft.status === "published" ? (
+            {exists && draft.status === "published" && canPublish ? (
               <Button variant="secondary" size="sm" onClick={unpublish} disabled={busy !== null}>
                 {busy === "unpublish" ? "Working…" : "Unpublish"}
               </Button>
@@ -240,9 +241,13 @@ export function InsightEditor({ ipo, initial }: Props) {
             <Button variant="secondary" size="sm" onClick={() => persist("draft")} disabled={busy !== null || generating}>
               {busy === "draft" ? "Saving…" : "Save draft"}
             </Button>
-            <Button variant="gold" size="sm" onClick={() => persist("published")} disabled={busy !== null || !draft.headline?.trim()} title={!draft.headline?.trim() ? "Add a headline before publishing" : undefined}>
-              {busy === "publish" ? "Publishing…" : "Publish"}
-            </Button>
+            {canPublish ? (
+              <Button variant="gold" size="sm" onClick={() => persist("published")} disabled={busy !== null || !draft.headline?.trim()} title={!draft.headline?.trim() ? "Add a headline before publishing" : undefined}>
+                {busy === "publish" ? "Publishing…" : "Publish"}
+              </Button>
+            ) : (
+              <span className="text-[12.5px] text-ink-3 self-center">{draft.status === "published" ? "Published: only a super admin can change it." : EDITOR_PUBLISH_NOTE}</span>
+            )}
           </div>
         </Card>
         <ErrorBanner message={error} />

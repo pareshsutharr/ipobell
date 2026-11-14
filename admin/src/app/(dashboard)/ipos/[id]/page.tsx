@@ -4,9 +4,13 @@ import { notFound } from "next/navigation";
 import { InsightEditor } from "@/components/insight/InsightEditor";
 import { IpoAdminDataForm } from "@/components/ipo/IpoAdminDataForm";
 import { IpoDocuments, type IpoDocumentRow } from "@/components/ipo/IpoDocuments";
+import { SummaryEditor, type SummaryInitial } from "@/components/ipo/SummaryEditor";
 import { Badge, ErrorBanner, statusTone } from "@/components/ui";
 import { crore, dateRange, dateShort, inr, pct } from "@/lib/format";
 import { ADMIN_DATA_COLUMNS, normalizeSector, normalizeState, suggestPlatform, type IpoAdminData } from "@/lib/ipo-admin-data";
+import { requireAdmin } from "@/lib/auth";
+import { emptySummary, type FundUse, type RiskItem } from "@/lib/drhp-summary";
+import { canPublish } from "@/lib/review";
 import { supabaseServer } from "@/lib/supabase/server";
 import { IPO_LIST_COLUMNS, type InsightRow, type IpoRow } from "@/lib/types";
 
@@ -14,14 +18,33 @@ export const metadata = { title: "Insight editor" };
 
 export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">) {
   const { id } = await params;
+  const { admin } = await requireAdmin();
+  const mayPublish = canPublish(admin.role);
   const supabase = await supabaseServer();
-  const [{ data: ipo, error }, { data: insight, error: insErr }, { data: adminData }, { data: documents, error: docsErr }] = await Promise.all([
+  const [{ data: ipo, error }, { data: insight, error: insErr }, { data: adminData }, { data: documents, error: docsErr }, { data: summary, error: sumErr }] = await Promise.all([
     supabase.from("ipos").select(IPO_LIST_COLUMNS).eq("id", id).maybeSingle(),
     supabase.from("ipo_insights").select("*").eq("ipo_id", id).maybeSingle(),
     // A missing table (migration not applied yet) just means "nothing entered"; the form explains it on save.
     supabase.from("ipo_admin_data").select(ADMIN_DATA_COLUMNS).eq("ipo_id", id).maybeSingle(),
     supabase.from("ipo_documents_admin").select("id, doc_type, version, is_current, file_path, file_name, file_size, page_count, pages_with_text, text_status, text_error, created_at").eq("ipo_id", id).order("doc_type").order("version", { ascending: false }),
+    supabase.from("ipo_drhp_summaries").select("status, short_md, long_md, use_of_funds, risks, source_document_id, ai_drafted, published_at").eq("ipo_id", id).maybeSingle(),
   ]);
+  const summaryInitial: SummaryInitial = summary
+    ? {
+        exists: true,
+        status: summary.status as "draft" | "published",
+        publishedAt: (summary.published_at as string | null) ?? null,
+        draft: {
+          short_md: (summary.short_md as string | null) ?? "",
+          long_md: (summary.long_md as string | null) ?? "",
+          use_of_funds: Array.isArray(summary.use_of_funds) ? (summary.use_of_funds as FundUse[]) : [],
+          risks: Array.isArray(summary.risks) ? (summary.risks as RiskItem[]) : [],
+          source_document_id: (summary.source_document_id as string | null) ?? null,
+          ai_drafted: Boolean(summary.ai_drafted),
+        },
+      }
+    : { exists: false, status: "draft", publishedAt: null, draft: emptySummary() };
+  const hasReadableDocument = ((documents ?? []) as IpoDocumentRow[]).some((d) => d.is_current && d.text_status === "done");
   if (!ipo && !error) notFound();
 
   const row = ipo as IpoRow | null;
@@ -80,7 +103,8 @@ export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">
             }}
           />
           <IpoDocuments ipoId={row.id} initial={(documents ?? []) as IpoDocumentRow[]} notSetUp={Boolean(docsErr && /ipo_documents_admin|schema cache/i.test(docsErr.message))} />
-          <InsightEditor ipo={row} initial={(insight as InsightRow | null) ?? null} />
+          <SummaryEditor ipoId={row.id} initial={summaryInitial} canPublish={mayPublish} hasDocument={hasReadableDocument} notSetUp={Boolean(sumErr && /ipo_drhp_summaries|schema cache/i.test(sumErr.message))} />
+          <InsightEditor ipo={row} initial={(insight as InsightRow | null) ?? null} canPublish={mayPublish} />
         </>
       ) : null}
     </>
