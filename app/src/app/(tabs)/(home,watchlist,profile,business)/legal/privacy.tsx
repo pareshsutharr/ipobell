@@ -24,6 +24,7 @@ export default function PrivacyScreen() {
             "Your choices: the IPOs you add to your watchlist, your notification preferences and your theme preference.",
             "PAN numbers you choose to save for allotment checks: stored encrypted on our servers and sent to the IPO's registrar (for example MUFG Intime or Bigshare) only to check allotment status for IPOs you add. Never sold. Deleted when you remove them or delete your account. We never collect demat account or bank details.",
             "Business enquiries: when you send a tool result to our team or book a call, we receive the name, phone number, e-mail, company name and message you enter, together with your answers and results from that tool.",
+            "Questions you ask about an offer document: the question, the answer and the time are stored with your account ID, to limit use per person and to improve the answers.",
             "Error reports: if the app fails, a technical report (error text, screen, app version) is sent so we can fix it. PANs, e-mail addresses and phone numbers are removed from the report before it leaves your phone.",
           ],
         },
@@ -45,6 +46,7 @@ export default function PrivacyScreen() {
             "Google: sign-in, if you choose it.",
             "IPO registrars: receive a PAN you saved, only to look up allotment status.",
             "Our website and e-mail provider: carry the enquiries you send to our advisory team.",
+            "Google Gemini: when you ask a question about an offer document, your question and pages of that public document are sent to Google's Gemini service to write the answer. Your name, e-mail, phone number and PAN are not sent.",
             "IPO Guru (ipoguru.in): the source of IPO, GMP and subscription data. No personal data is sent to IPO Guru.",
           ],
         },
@@ -57,7 +59,7 @@ export default function PrivacyScreen() {
           bullets: [
             "Push tokens that haven't been seen for 180 days are deleted automatically.",
             "Notification logs are kept for 180 days for de-duplication and troubleshooting.",
-            "Usage events are kept for up to 18 months. Error reports are kept for 90 days.",
+            "Usage events are kept for up to 18 months. Error reports are kept for 90 days. Questions about offer documents are kept for one year.",
             "Guest accounts that were never used are removed after 90 days.",
             "Account data is kept until you delete your account.",
             "Business enquiries are kept as business records so our team can follow up.",
@@ -67,7 +69,7 @@ export default function PrivacyScreen() {
           heading: "Your controls",
           bullets: [
             "Delete your account at any time from Profile → Delete my data. This erases your account, watchlist, preferences, push tokens, saved PANs and tracked applications immediately.",
-            "After deletion, enquiries you sent stay with our advisory team, and past usage events and error reports remain without any link to your account. To have an enquiry removed, contact us.",
+            "After deletion, enquiries you sent stay with our advisory team, and past usage events, error reports and questions remain without any link to your account. To have an enquiry removed, contact us.",
             "Turn individual alerts on or off from the notification settings, or block notifications in system settings.",
             "Remove a saved PAN at any time from Saved PANs.",
           ],

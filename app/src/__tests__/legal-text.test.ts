@@ -63,7 +63,7 @@ describe("privacy policy and welcome screen", () => {
   const privacy = read("app/(tabs)/(home,watchlist,profile,business)/legal/privacy.tsx");
 
   it("discloses each kind of data the app really collects", () => {
-    for (const topic of [/usage events/i, /searches/i, /PAN numbers/i, /registrar/i, /Business enquiries/i, /Error reports/i, /Push token/i, /18 months/, /90 days/]) {
+    for (const topic of [/usage events/i, /searches/i, /PAN numbers/i, /registrar/i, /Business enquiries/i, /Error reports/i, /Push token/i, /18 months/, /90 days/, /Questions you ask about an offer document/, /Google Gemini/, /one year/]) {
       expect(privacy).toMatch(topic);
     }
   });

@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { todayIST } from "@/lib/format";
 import { parseInterest, type IpoInterest } from "@/features/ipos/interest";
 import { parseSectorStat, type SectorStat } from "@/features/ipos/sectors";
+import { classifyFailure, parseAskResponse, type AskFailure, type AskResult } from "@/features/ipos/ask";
 import type { StateCount } from "@/features/ipos/states";
 import { parseDocument, parseSummary, type DrhpSummary, type UploadedDocument } from "@/features/ipos/summary";
 import type {
@@ -150,6 +151,46 @@ export async function fetchIpoStates(): Promise<Record<string, string>> {
     if (!data || data.length < 1000) break;
   }
   return out;
+}
+
+export class AskError extends Error {
+  kind: AskFailure;
+  constructor(kind: AskFailure, message: string) {
+    super(message);
+    this.name = "AskError";
+    this.kind = kind;
+  }
+}
+
+/** Ask a question about an IPO's offer document. Throws AskError with a message that can be shown as is. */
+export async function askDrhp(ipoId: string, question: string): Promise<AskResult> {
+  let data: unknown;
+  try {
+    const res = await supabase.functions.invoke("ask-drhp", { body: { ipo_id: ipoId, question } });
+    if (res.error) {
+      // supabase-js puts the HTTP response of a failed function call on error.context
+      const response = (res.error as { context?: unknown }).context;
+      if (response && typeof (response as Response).status === "number") {
+        const r = response as Response;
+        const body = await r.json().catch(() => null);
+        const f = classifyFailure(r.status, body);
+        throw new AskError(f.kind, f.message);
+      }
+      const f = classifyFailure(null, null);
+      throw new AskError(f.kind, f.message);
+    }
+    data = res.data;
+  } catch (e) {
+    if (e instanceof AskError) throw e;
+    const f = classifyFailure(null, null);
+    throw new AskError(f.kind, f.message);
+  }
+  const parsed = parseAskResponse(data);
+  if (!parsed) {
+    const f = classifyFailure(500, null);
+    throw new AskError(f.kind, f.message);
+  }
+  return parsed;
 }
 
 /** The published DRHP summary for one IPO, or null. Drafts are hidden by the database. */

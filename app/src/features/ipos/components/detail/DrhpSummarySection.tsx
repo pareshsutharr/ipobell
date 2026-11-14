@@ -2,6 +2,7 @@
 // money goes, the risks the document states, and the document itself. Written by the team in the admin panel
 // from the uploaded offer document and shown only once published. Page references open the PDF at that page.
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -159,6 +160,19 @@ export function DrhpSummarySection({ ipo }: { ipo: Ipo }) {
         </View>
       ) : null}
 
+      {documents.length ? (
+        <PressableScale onPress={() => router.push({ pathname: "/ask-drhp", params: { slug: ipo.slug } })} accessibilityRole="button" accessibilityLabel="Ask a question about the offer document" style={[styles.ask, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+          <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.brand} />
+          <View style={{ flex: 1 }}>
+            <Text variant="title">Ask the document a question</Text>
+            <Text variant="caption" color="textMuted">
+              Answers come from the {sourceName}, with page numbers
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+        </PressableScale>
+      ) : null}
+
       {summary ? (
         <Text variant="caption" color="textFaint" style={{ marginTop: 12, lineHeight: 17 }}>
           {`A summary written by our team from the company's ${sourceName}${ref ? "; tap a page number to check it in the document" : ""}. It describes the document and is not advice. Read the offer document before you decide.`}
@@ -174,4 +188,5 @@ const styles = StyleSheet.create({
   risk: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   more: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", paddingVertical: 4 },
   doc: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  ask: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, marginTop: 12 },
 });
