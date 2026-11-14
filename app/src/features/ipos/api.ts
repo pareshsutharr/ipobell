@@ -3,6 +3,7 @@ import { todayIST } from "@/lib/format";
 import { parseInterest, type IpoInterest } from "@/features/ipos/interest";
 import { parseSectorStat, type SectorStat } from "@/features/ipos/sectors";
 import type { StateCount } from "@/features/ipos/states";
+import { parseDocument, parseSummary, type DrhpSummary, type UploadedDocument } from "@/features/ipos/summary";
 import type {
   AnchorRow,
   Board,
@@ -149,6 +150,20 @@ export async function fetchIpoStates(): Promise<Record<string, string>> {
     if (!data || data.length < 1000) break;
   }
   return out;
+}
+
+/** The published DRHP summary for one IPO, or null. Drafts are hidden by the database. */
+export async function fetchDrhpSummary(ipoId: string): Promise<DrhpSummary | null> {
+  const { data, error } = await supabase.from("ipo_drhp_summaries").select("short_md, long_md, use_of_funds, risks, source_document_id, published_at").eq("ipo_id", ipoId).eq("status", "published").maybeSingle();
+  if (error) throw error;
+  return parseSummary(data as Record<string, unknown> | null);
+}
+
+/** Offer documents the team uploaded for one IPO (the current version of each type, fully read). */
+export async function fetchUploadedDocuments(ipoId: string): Promise<UploadedDocument[]> {
+  const { data, error } = await supabase.from("ipo_documents_admin").select("id, doc_type, version, file_path, page_count").eq("ipo_id", ipoId).eq("is_current", true).eq("text_status", "done");
+  if (error) throw error;
+  return ((data ?? []) as Record<string, unknown>[]).map(parseDocument).filter((d): d is UploadedDocument => d !== null);
 }
 
 /** How many people watch this IPO / opened it this month. Totals only; small numbers come back as null. */

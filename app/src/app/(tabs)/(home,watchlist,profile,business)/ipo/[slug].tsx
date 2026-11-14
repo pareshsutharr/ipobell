@@ -13,6 +13,7 @@ import { AnchorsSection } from "@/features/ipos/components/detail/AnchorsSection
 import { DetailHeader } from "@/features/ipos/components/detail/DetailHeader";
 import { DetailSkeleton } from "@/features/ipos/components/detail/DetailSkeleton";
 import { DocumentsSection } from "@/features/ipos/components/detail/DocumentsSection";
+import { DrhpSummarySection } from "@/features/ipos/components/detail/DrhpSummarySection";
 import { FinancialsSection } from "@/features/ipos/components/detail/FinancialsSection";
 import { GmpChartSection } from "@/features/ipos/components/detail/GmpChartSection";
 import { GrowthSection } from "@/features/ipos/components/detail/GrowthSection";
@@ -69,6 +70,7 @@ export default function IpoDetailScreen() {
             {business ? insight.data ? <InsightSection insight={insight.data} ipo={ipo} /> : insight.isLoading ? null : <InsightEmpty ipo={ipo} /> : null}
             {business ? <GrowthSection ipo={ipo} /> : null}
             <TimelineSection ipo={ipo} />
+            <DrhpSummarySection ipo={ipo} />
             {showSubscription ? <SubscriptionSection ipo={ipo} /> : null}
             <ListingSection ipo={ipo} />
             <GmpChartSection ipo={ipo} />

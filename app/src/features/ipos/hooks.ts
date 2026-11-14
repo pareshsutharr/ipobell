@@ -5,6 +5,7 @@ import {
   fetchAllotmentWindow,
   fetchAnchors,
   fetchDocuments,
+  fetchDrhpSummary,
   fetchFinancials,
   fetchGmpHistory,
   fetchIpo,
@@ -20,6 +21,7 @@ import {
   fetchSectorStats,
   fetchStateCounts,
   fetchSubscriptionTrend,
+  fetchUploadedDocuments,
   searchIpos,
   type ListFilters,
 } from "@/features/ipos/api";
@@ -86,6 +88,15 @@ export function useIpoStates() {
 export function useIpoState(ipoId: string | undefined): string | undefined {
   const { data } = useIpoStates();
   return ipoId ? data?.[ipoId] : undefined;
+}
+
+/** Published DRHP summary. A failure (for example an older backend) shows nothing rather than an error. */
+export function useDrhpSummary(ipoId: string | undefined) {
+  return useQuery({ queryKey: qk.drhpSummary(ipoId ?? ""), queryFn: () => fetchDrhpSummary(ipoId as string), enabled: Boolean(ipoId), staleTime: 60 * 1000, refetchOnMount: "always", retry: false });
+}
+
+export function useUploadedDocuments(ipoId: string | undefined) {
+  return useQuery({ queryKey: qk.uploadedDocuments(ipoId ?? ""), queryFn: () => fetchUploadedDocuments(ipoId as string), enabled: Boolean(ipoId), staleTime: 5 * 60 * 1000, retry: false });
 }
 
 /** Interest totals for one IPO. A failure (for example an older backend) simply shows nothing. */
