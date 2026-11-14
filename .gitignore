@@ -4,6 +4,7 @@
 !.env.example
 **/google-services.json
 **/service-account*.json
+**/play-service-account.json
 supabase/.temp
 supabase/.branches
 
@@ -17,6 +18,7 @@ yarn-error.log*
 dist/
 web-build/
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
