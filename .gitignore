@@ -1,0 +1,34 @@
+# secrets
+.env
+.env.*
+!.env.example
+**/google-services.json
+**/service-account*.json
+supabase/.temp
+supabase/.branches
+
+# node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# expo / react native
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+app/android/
+app/ios/
+.DS_Store
+app/credentials/
+app/credentials.json
+release/
+
+# vercel
+.vercel
+admin/.env*.local

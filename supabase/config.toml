@@ -1,0 +1,22 @@
+project_id = "ehpjxstddpkxijfjelax"
+
+[functions.sync-ipos]
+verify_jwt = false
+
+[functions.send-notifications]
+verify_jwt = false
+
+[functions.daily-reminders]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.test-push]
+verify_jwt = true
+
+[functions.check-allotments]
+verify_jwt = false
+
+[functions.notify-lead]
+verify_jwt = false

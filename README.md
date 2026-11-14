@@ -101,3 +101,4 @@ Every screen view, IPO view, perspective switch, tool start/completion, lead, se
 
 Deliberately simple: no ads, no sign-in (anonymous device account), no subscriptions, no sponsor links. Five tabs: IPOs, Allotment (PAN tracker), Watchlist, Get Listed (advisory tools + lead capture, added 28 Oct 2026), Profile (notifications, saved PANs, appearance, about Be IPO Ready, legal, delete my data).
 # ipobell
+# ipobell
