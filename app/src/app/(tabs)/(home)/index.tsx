@@ -99,6 +99,18 @@ export default function HomeScreen() {
         <FilterChip label="Mainboard" selected={board === "mainboard"} onPress={() => setBoard("mainboard")} />
         <FilterChip label="SME" selected={board === "sme"} onPress={() => setBoard("sme")} />
       </ScrollView>
+      {segment === "listed" ? (
+        <PressableScale onPress={() => router.push("/listing-stats")} accessibilityRole="button" accessibilityLabel="Open listing statistics" style={[styles.statsLink, { marginHorizontal: spacing.lg, borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <Ionicons name="stats-chart-outline" size={18} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text variant="title">Listing statistics</Text>
+            <Text variant="caption" color="textMuted">
+              Average listing gain and hit rate, SME against Mainboard
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+        </PressableScale>
+      ) : null}
     </View>
   );
 
@@ -177,4 +189,5 @@ const styles = StyleSheet.create({
   wordmark: { flexDirection: "row", alignItems: "center", gap: 10 },
   actions: { flexDirection: "row", gap: 8 },
   attribution: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 },
+  statsLink: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
 });
