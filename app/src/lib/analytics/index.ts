@@ -18,7 +18,7 @@ import { usePerspective } from "@/features/perspective/store";
 import { useAuth } from "@/lib/auth/store";
 import { supabase } from "@/lib/supabase";
 
-export type ToolName = "readiness" | "eligibility" | "issue_size" | "issue_cost" | "checklist" | "book_call";
+export type ToolName = "readiness" | "eligibility" | "issue_size" | "issue_cost" | "checklist" | "book_call" | "valuation" | "peers";
 export type AnalyticsProps = Record<string, string | number | boolean | null | undefined>;
 
 interface QueuedEvent {

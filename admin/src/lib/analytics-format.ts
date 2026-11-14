@@ -8,6 +8,8 @@ export const TOOL_LABEL: Record<string, string> = {
   eligibility: "Eligibility check",
   issue_size: "Issue size calculator",
   issue_cost: "Issue cost estimator",
+  valuation: "Valuation range",
+  peers: "Compare my company",
   checklist: "SME IPO checklist",
   book_call: "Book a call",
 };
