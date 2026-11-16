@@ -10,6 +10,7 @@ export const TOOL_LABEL: Record<string, string> = {
   issue_cost: "Issue cost estimator",
   valuation: "Valuation range",
   peers: "Compare my company",
+  health_check: "Balance sheet check",
   checklist: "SME IPO checklist",
   book_call: "Book a call",
 };
@@ -22,6 +23,7 @@ export const SOURCE_TO_TOOL: Record<string, string> = {
   "sme-ipo-checklist": "checklist",
   "book-call": "book_call",
   "business-hub": "business-hub",
+  "balance-sheet-check": "health_check",
 };
 
 export const AUDIENCE_LABEL: Record<string, string> = { investor: "Investor", business: "Business owner", unknown: "Not chosen" };

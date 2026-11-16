@@ -6,7 +6,7 @@ export type InsightStatus = "draft" | "published";
 export type Verdict = "positive" | "neutral" | "cautious";
 export type AdminRole = "super_admin" | "editor";
 export type LeadStatus = "new" | "contacted" | "qualified" | "closed" | "spam";
-export type LeadSource = "readiness-tool" | "eligibility-check" | "issue-size-calculator" | "issue-cost-estimator" | "sme-ipo-checklist" | "book-call" | "business-hub";
+export type LeadSource = "readiness-tool" | "eligibility-check" | "issue-size-calculator" | "issue-cost-estimator" | "sme-ipo-checklist" | "book-call" | "business-hub" | "balance-sheet-check";
 
 export interface IpoRow {
   id: string;
@@ -158,6 +158,7 @@ export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
   "sme-ipo-checklist": "Checklist",
   "book-call": "Book a call",
   "business-hub": "Get Listed hub",
+  "balance-sheet-check": "Balance sheet check",
 };
 
 export interface LeadNotificationSettings {

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
 
-export type LeadSource = "readiness-tool" | "eligibility-check" | "issue-size-calculator" | "issue-cost-estimator" | "sme-ipo-checklist" | "book-call" | "business-hub";
+export type LeadSource = "readiness-tool" | "eligibility-check" | "issue-size-calculator" | "issue-cost-estimator" | "sme-ipo-checklist" | "book-call" | "business-hub" | "balance-sheet-check";
 
 export interface LeadContact {
   name: string;

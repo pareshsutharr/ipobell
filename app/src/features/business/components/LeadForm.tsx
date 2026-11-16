@@ -24,7 +24,7 @@ interface Props {
   onSent?: (id: string) => void;
 }
 
-const LEAD_TOOL: Record<string, string> = { "readiness-tool": "readiness", "eligibility-check": "eligibility", "issue-size-calculator": "issue_size", "issue-cost-estimator": "issue_cost", "sme-ipo-checklist": "checklist", "book-call": "book_call", "business-hub": "book_call" };
+const LEAD_TOOL: Record<string, string> = { "readiness-tool": "readiness", "eligibility-check": "eligibility", "issue-size-calculator": "issue_size", "issue-cost-estimator": "issue_cost", "sme-ipo-checklist": "checklist", "book-call": "book_call", "business-hub": "book_call", "balance-sheet-check": "health_check" };
 
 export function LeadForm({ source, title = "Talk to our IPO team", subtitle = "Share your details and a Be IPO Ready advisor will call you back within one working day.", cta = "Request a call back", payload, message, readinessScore, showMessage, onSent }: Props) {
   const { colors, spacing, radius } = useTheme();

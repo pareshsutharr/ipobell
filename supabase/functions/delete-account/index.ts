@@ -1,7 +1,9 @@
 // delete-account — permanently deletes the calling user (auth.users row; everything else cascades).
 // Called by the app with the user's JWT. Required for Play Store account-deletion policy.
+// Balance sheet files the user uploaded are removed from storage first (rows cascade, files do not).
 
 import { adminClient, AuthError, requireUser } from "../_shared/auth.ts";
+import { BALANCE_SHEET_BUCKET } from "../_shared/balance-sheets.ts";
 import { error, handleOptions, json } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -14,6 +16,15 @@ Deno.serve(async (req) => {
     const admin = adminClient();
     // Explicitly drop tokens first so no push can race the deletion.
     await admin.from("device_tokens").delete().eq("user_id", user.id);
+    // The user's own folder in the private bucket. Anything this misses is removed by the nightly purge
+    // (files no report points at), so a storage hiccup never blocks deleting the account.
+    try {
+      const bucket = admin.storage.from(BALANCE_SHEET_BUCKET);
+      const { data: files } = await bucket.list(user.id, { limit: 100 });
+      if (files?.length) await bucket.remove(files.map((f) => `${user.id}/${f.name}`));
+    } catch {
+      // bucket not created yet, or storage unavailable
+    }
     const { error: delErr } = await admin.auth.admin.deleteUser(user.id);
     if (delErr) return error(delErr.message, 500);
     return json({ ok: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, BookOpen, Bug, History, MessagesSquare, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, SlidersHorizontal, Users } from "lucide-react";
+import { BarChart3, BookOpen, Bug, FileSpreadsheet, History, MessagesSquare, Building2, LayoutDashboard, LogOut, MessageSquareText, Settings, SlidersHorizontal, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/rules", label: "Business rules", icon: SlidersHorizontal },
   { href: "/questions", label: "Questions", icon: MessagesSquare },
+  { href: "/balance-sheets", label: "Balance sheets", icon: FileSpreadsheet },
   { href: "/change-log", label: "Change log", icon: History },
   { href: "/errors", label: "App errors", icon: Bug },
   { href: "/admins", label: "Team access", icon: Users, superOnly: true },

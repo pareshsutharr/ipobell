@@ -7,7 +7,7 @@ export default function PrivacyScreen() {
   return (
     <TextPage
       title="Privacy policy"
-      subtitle="Last updated 14 November 2026"
+      subtitle="Last updated 16 November 2026"
       blocks={[
         {
           paragraphs: [
@@ -24,6 +24,7 @@ export default function PrivacyScreen() {
             "Your choices: the IPOs you add to your watchlist, your notification preferences and your theme preference.",
             "PAN numbers you choose to save for allotment checks: stored encrypted on our servers and sent to the IPO's registrar (for example MUFG Intime or Bigshare) only to check allotment status for IPOs you add. Never sold. Deleted when you remove them or delete your account. We never collect demat account or bank details.",
             "Business enquiries: when you send a tool result to our team or book a call, we receive the name, phone number, e-mail, company name and message you enter, together with your answers and results from that tool.",
+            "Balance sheet check: the statements file you choose is read on your phone and nothing is uploaded. Only if you tick the box and tap Save are the file and the figures you checked stored in a private folder for your account, where our advisory team can open them to prepare for a call with you.",
             "Questions you ask about an offer document: the question, the answer and the time are stored with your account ID, to limit use per person and to improve the answers.",
             "Error reports: if the app fails, a technical report (error text, screen, app version) is sent so we can fix it. PANs, e-mail addresses and phone numbers are removed from the report before it leaves your phone.",
           ],
@@ -60,6 +61,7 @@ export default function PrivacyScreen() {
             "Push tokens that haven't been seen for 180 days are deleted automatically.",
             "Notification logs are kept for 180 days for de-duplication and troubleshooting.",
             "Usage events are kept for up to 18 months. Error reports are kept for 90 days. Questions about offer documents are kept for one year.",
+            "Balance sheet files and figures you saved are deleted automatically after 90 days.",
             "Guest accounts that were never used are removed after 90 days.",
             "Account data is kept until you delete your account.",
             "Business enquiries are kept as business records so our team can follow up.",
@@ -68,10 +70,11 @@ export default function PrivacyScreen() {
         {
           heading: "Your controls",
           bullets: [
-            "Delete your account at any time from Profile → Delete my data. This erases your account, watchlist, preferences, push tokens, saved PANs and tracked applications immediately.",
+            "Delete your account at any time from Profile → Delete my data. This erases your account, watchlist, preferences, push tokens, saved PANs, tracked applications and saved balance sheet files immediately.",
             "After deletion, enquiries you sent stay with our advisory team, and past usage events, error reports and questions remain without any link to your account. To have an enquiry removed, contact us.",
             "Turn individual alerts on or off from the notification settings, or block notifications in system settings.",
             "Remove a saved PAN at any time from Saved PANs.",
+            "Delete a saved balance sheet file and its figures at any time from Get Listed → Balance Sheet Check.",
           ],
         },
         {
