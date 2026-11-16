@@ -14,6 +14,8 @@ export function ActionBar({ ipo }: { ipo: Ipo }) {
   const { colors, spacing } = useTheme();
   const closed = ipo.close_date ? (daysUntil(ipo.close_date) ?? 1) <= 0 : false;
   const showAllotment = closed || ipo.status === "closed" || ipo.status === "listed";
+  // While the issue is open: the list of brokers. The app opens the broker; it never places an order itself.
+  const canApply = ipo.status === "open" && !closed;
 
   const checkAllotment = () => {
     const url = ipo.registrar?.status_page || ipo.registrar?.website;
@@ -24,7 +26,9 @@ export function ActionBar({ ipo }: { ipo: Ipo }) {
 
   return (
     <View style={[styles.wrap, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md }]}>
-      {showAllotment ? (
+      {canApply ? (
+        <Button title="Apply through your broker" icon="open-outline" variant="dark" onPress={() => router.push({ pathname: "/brokers", params: { name: ipo.display_name ?? ipo.name, slug: ipo.slug } })} style={{ flex: 1 }} fullWidth testID="ipo-apply" />
+      ) : showAllotment ? (
         <Button title="Check allotment status" variant="dark" onPress={checkAllotment} style={{ flex: 1 }} fullWidth />
       ) : (
         <Button title="Add to watchlist & get alerts" variant="dark" onPress={() => router.push("/notifications")} style={{ flex: 1 }} fullWidth />

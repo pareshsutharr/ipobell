@@ -71,6 +71,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             "-dontwarn androidx.work.**",
             "-dontwarn androidx.room.**",
           ].join("\n"),
+          // Broker apps the "Apply through your broker" page may open and read the icon of (Android 11+ hides
+          // other apps unless they are listed). Keep in step with BROKER_PACKAGES in src/features/ipos/brokers.ts.
+          manifestQueries: { package: ["com.fivepaisa.trade", "com.msf.angelmobile", "com.dhan.live", "com.nextbillion.groww", "com.cloudtradetech.sky", "com.kotak.neo", "com.paytmmoney", "in.upstox.app", "com.zerodha.kite3"] },
         },
       },
     ],
