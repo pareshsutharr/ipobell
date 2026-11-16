@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import { InsightEditor } from "@/components/insight/InsightEditor";
 import { IpoAdminDataForm } from "@/components/ipo/IpoAdminDataForm";
+import { PromotionForm } from "@/components/ipo/PromotionForm";
+import { promotionError, readSwitches, type Promotion } from "@/lib/held-features";
 import { IpoDocuments, type IpoDocumentRow } from "@/components/ipo/IpoDocuments";
 import { SummaryEditor, type SummaryInitial } from "@/components/ipo/SummaryEditor";
 import { Badge, ErrorBanner, statusTone } from "@/components/ui";
@@ -29,6 +31,11 @@ export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">
     supabase.from("ipo_documents_admin").select("id, doc_type, version, is_current, file_path, file_name, file_size, page_count, pages_with_text, text_status, text_error, created_at").eq("ipo_id", id).order("doc_type").order("version", { ascending: false }),
     supabase.from("ipo_drhp_summaries").select("status, short_md, long_md, use_of_funds, risks, source_document_id, ai_drafted, published_at").eq("ipo_id", id).maybeSingle(),
   ]);
+  // Promotion is a super admin's decision and is held for legal review: loaded apart from the form above so an
+  // older database (migration not applied) only disables this one card.
+  const [{ data: promo, error: promoErr }, { data: switchRows }] = mayPublish
+    ? await Promise.all([supabase.from("ipo_admin_data").select("is_promoted, promoted_until").eq("ipo_id", id).maybeSingle(), supabase.from("feature_switches").select("key, enabled")])
+    : [{ data: null, error: null }, { data: null }];
   const summaryInitial: SummaryInitial = summary
     ? {
         exists: true,
@@ -102,6 +109,15 @@ export default async function IpoInsightPage({ params }: PageProps<"/ipos/[id]">
               platformFrom: "the data feed",
             }}
           />
+          {mayPublish ? (
+            <PromotionForm
+              ipoId={row.id}
+              ipoStatus={row.status}
+              initial={{ is_promoted: Boolean((promo as Promotion | null)?.is_promoted), promoted_until: (promo as Promotion | null)?.promoted_until ?? null }}
+              switchOn={readSwitches(switchRows).promoted_ipos}
+              setupError={promoErr ? promotionError(promoErr.message) : null}
+            />
+          ) : null}
           <IpoDocuments ipoId={row.id} initial={(documents ?? []) as IpoDocumentRow[]} notSetUp={Boolean(docsErr && /ipo_documents_admin|schema cache/i.test(docsErr.message))} />
           <SummaryEditor ipoId={row.id} initial={summaryInitial} canPublish={mayPublish} hasDocument={hasReadableDocument} notSetUp={Boolean(sumErr && /ipo_drhp_summaries|schema cache/i.test(sumErr.message))} />
           <InsightEditor ipo={row} initial={(insight as InsightRow | null) ?? null} canPublish={mayPublish} />

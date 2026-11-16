@@ -11,6 +11,7 @@ import { useInsightMarkers } from "@/features/insights/hooks";
 import { PerspectiveSwitch } from "@/features/perspective/PerspectiveSwitch";
 import { usePerspective } from "@/features/perspective/store";
 import { IpoCard } from "@/features/ipos/components/IpoCard";
+import { PromotedBlock } from "@/features/ipos/components/PromotedBlock";
 import { useIpos, useIposPaged } from "@/features/ipos/hooks";
 import { flattenPages, totalOf } from "@/features/ipos/paging";
 import type { Board, IpoListItem, IpoStatus } from "@/features/ipos/types";
@@ -98,6 +99,7 @@ export default function HomeScreen() {
     <View style={{ paddingBottom: spacing.xs, gap: spacing.md }}>
       {business ? <BusinessStrip /> : null}
       {business ? <LatestInsights /> : null}
+      <PromotedBlock lists={[open.data, upcoming.data]} onWatchlistLimit={onWatchlistLimit} />
       <SegmentedControl
         value={segment}
         onChange={setSegment}

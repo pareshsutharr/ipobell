@@ -20,7 +20,8 @@ interface LogRow {
 }
 
 const TABLE_LABEL: Record<string, string> = {
-  ipo_admin_data: "IPO data (state, sector)",
+  ipo_admin_data: "IPO data (state, sector, promotion)",
+  feature_switches: "Feature switch",
   ipo_insights: "Business insight",
   ipo_drhp_summaries: "DRHP summary",
   ipo_documents_admin: "Offer document",

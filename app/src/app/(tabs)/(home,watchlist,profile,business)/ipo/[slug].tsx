@@ -16,6 +16,7 @@ import { DocumentsSection } from "@/features/ipos/components/detail/DocumentsSec
 import { DrhpSummarySection } from "@/features/ipos/components/detail/DrhpSummarySection";
 import { FinancialsSection } from "@/features/ipos/components/detail/FinancialsSection";
 import { GmpChartSection } from "@/features/ipos/components/detail/GmpChartSection";
+import { DataScoreSection } from "@/features/ipos/components/detail/DataScoreSection";
 import { GrowthSection } from "@/features/ipos/components/detail/GrowthSection";
 import { HeroCard, IssueDetailsSection } from "@/features/ipos/components/detail/HeroCard";
 import { IntermediariesSection } from "@/features/ipos/components/detail/IntermediariesSection";
@@ -77,6 +78,7 @@ export default function IpoDetailScreen() {
             <IssueDetailsSection ipo={ipo} />
             <LotCalculatorSection ipo={ipo} />
             <FinancialsSection ipo={ipo} />
+            <DataScoreSection ipo={ipo} />
             <AboutSection ipo={ipo} />
             {!business && insight.data?.show_to_investors ? <ResearchNote insight={insight.data} /> : null}
             <AnchorsSection ipo={ipo} />
